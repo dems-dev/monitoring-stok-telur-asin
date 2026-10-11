@@ -1,59 +1,89 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# SIM-STOK TELUR ASIN
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Sistem Monitoring Persediaan Stok Telur Asin — Laravel 12 + MySQL 8.
 
-## About Laravel
+Dibangun ulang dari prototipe satu berkas HTML yang diarsipkan di
+`docs/prototype/index.html`. Prototipe itu menyimpan seluruh data di
+`localStorage`; versi ini memakai database, otorisasi di server, dan
+pencatatan mutasi yang aman terhadap entri bersamaan.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Kebutuhan
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+| Komponen | Versi yang dipakai saat dibangun |
+|---|---|
+| PHP | 8.4.25 (ekstensi: `pdo_mysql`, `mbstring`, `openssl`, `curl`, `fileinfo`, `gd`, `intl`, `zip`) |
+| MySQL | 8.0 (service `MySQL80` di `127.0.0.1:3306`) |
+| Node | 22.x + npm 10.x |
+| Composer | 2.8.x |
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+Untuk menjalankan test dibutuhkan `pdo_sqlite` (phpunit memakai SQLite
+`:memory:`). Pada instalasi PHP dari winget, berkas `php_pdo_sqlite.dll`
+sudah tersedia di folder `ext/` tetapi barisnya dinonaktifkan di `php.ini`.
 
-## Learning Laravel
+## Penyiapan
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+```bash
+composer install
+npm install
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+# Isi DB_PASSWORD di .env dengan password root MySQL Anda.
+php artisan key:generate   # hanya jika .env belum punya APP_KEY
 
-## Laravel Sponsors
+php artisan migrate --seed
+npm run build
+php artisan serve
+```
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+Buka `http://127.0.0.1:8000`.
 
-### Premium Partners
+Akun contoh dari seeder (ganti sebelum dipakai sungguhan):
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+| Username | Password | Peran |
+|---|---|---|
+| `admin` | `admin123` | ADMIN — akses penuh |
+| `petugas` | `petugas123` | PETUGAS — catat mutasi, lihat stok |
+| `owner` | `owner123` | OWNER — hanya baca |
 
-## Contributing
+## Pembagian peran
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+| Kemampuan | ADMIN | PETUGAS | OWNER |
+|---|:---:|:---:|:---:|
+| Lihat dashboard, katalog, laporan | ya | ya | ya |
+| Catat barang masuk / keluar | ya | ya | — |
+| Kelola master produk | ya | — | — |
+| Kelola pengguna | ya | — | — |
 
-## Code of Conduct
+Aturannya terpusat di `App\Enums\Role`, ditegakkan oleh
+`App\Policies\ProductPolicy` dan middleware `role:` di `routes/web.php`.
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+## Struktur data
 
-## Security Vulnerabilities
+- **products** — `sku` unik, kategori, harga, `stock`, `min_stock`.
+  Dihapus lunak (*soft delete*) agar riwayat mutasi tidak ikut hilang.
+- **stock_logs** — `type` (MASUK/KELUAR), FK produk dan pencatat, `amount`,
+  `source_or_target`, `status`, `note`, `logged_date`.
+  `logged_date` adalah tanggal yang diisi petugas; `created_at` waktu entri
+  sebenarnya, sehingga keduanya bisa dibandingkan saat audit.
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+## Perbedaan yang disengaja dari prototipe
 
-## License
+- **Stok tidak bisa minus.** Mutasi keluar dijalankan dalam satu transaksi
+  dengan `lockForUpdate()` pada baris produk, jadi dua entri bersamaan tidak
+  bisa menembus stok fisik. Prototipe memeriksa stok di sisi klien saja.
+- **Status mutasi masuk diisi server**, bukan dikirim dari input klien.
+- **Ekspor CSV mengikuti filter yang aktif.** Prototipe selalu mengekspor
+  seluruh log meski filter terpasang.
+- **CSV lewat `fputcsv` + BOM UTF-8.** Prototipe merangkai string tanpa
+  *escaping*, sehingga catatan yang memuat tanda kutip merusak kolom.
+- **Password di-hash.** Prototipe menyimpannya sebagai teks biasa di
+  `localStorage`.
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+## Test
+
+```bash
+php artisan test
+```
+
+Mencakup login via username, batas tiap peran, penambahan dan pengurangan
+stok, penolakan stok tidak cukup tanpa menyisakan log, status mutasi masuk
+yang tidak bisa disetir klien, filter laporan, dan *escaping* CSV.
