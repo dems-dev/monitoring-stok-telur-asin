@@ -1,6 +1,6 @@
 # SIM-STOK TELUR ASIN
 
-Sistem Monitoring Persediaan Stok Telur Asin — Laravel 12 + MySQL 8.
+Sistem Monitoring Persediaan Stok Telur Asin — Laravel 12 + MariaDB/MySQL.
 
 Dibangun ulang dari prototipe satu berkas HTML yang diarsipkan di
 `docs/prototype/index.html`. Prototipe itu menyimpan seluruh data di
@@ -12,7 +12,7 @@ pencatatan mutasi yang aman terhadap entri bersamaan.
 | Komponen | Versi yang dipakai saat dibangun |
 |---|---|
 | PHP | 8.4.25 (ekstensi: `pdo_mysql`, `mbstring`, `openssl`, `curl`, `fileinfo`, `gd`, `intl`, `zip`) |
-| MySQL | 8.0 (service `MySQL80` di `127.0.0.1:3306`) |
+| Database | MariaDB 10.4.32 bawaan XAMPP di `127.0.0.1:3306`, root tanpa password (MySQL 8 juga jalan; cukup ubah `DB_PASSWORD`) |
 | Node | 22.x + npm 10.x |
 | Composer | 2.8.x |
 
@@ -26,7 +26,9 @@ sudah tersedia di folder `ext/` tetapi barisnya dinonaktifkan di `php.ini`.
 composer install
 npm install
 
-# Isi DB_PASSWORD di .env dengan password root MySQL Anda.
+# Nyalakan MariaDB lewat XAMPP Control Panel, lalu buat databasenya:
+#   CREATE DATABASE sim_telur_asin CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+# Sesuaikan DB_PASSWORD di .env bila database Anda berpassword.
 php artisan key:generate   # hanya jika .env belum punya APP_KEY
 
 php artisan migrate --seed
