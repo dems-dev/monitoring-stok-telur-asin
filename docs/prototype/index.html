@@ -1,0 +1,1459 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Monitoring Persediaan Stok Telur Asin</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                            800: '#166534',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @media print {
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            body { background: white !important; color: black !important; }
+            .card-shadow { box-shadow: none !important; border: 1px solid #ccc !important; }
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 font-sans text-slate-800 min-h-screen flex flex-col antialiased">
+
+    <!-- ==================== AUTH / LOGIN SCREEN ==================== -->
+    <div id="loginScreen" class="fixed inset-0 z-50 bg-slate-900 flex items-center justify-center p-4 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-amber-900/20 via-slate-900 to-slate-950">
+        <div class="max-w-md w-full bg-white rounded-3xl p-8 shadow-2xl border border-slate-100">
+            <!-- Brand Header -->
+            <div class="text-center mb-8">
+                <div class="w-16 h-16 rounded-2xl bg-amber-500 text-white flex items-center justify-center mx-auto mb-4 shadow-lg shadow-amber-500/30">
+                    <i class="fa-solid fa-egg text-3xl"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-slate-900">SIM-STOK TELUR ASIN</h2>
+                <p class="text-xs text-slate-500 font-medium mt-1">Sistem Monitoring Persediaan Barang Berbasis Web</p>
+                <div class="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-[11px] font-semibold">
+                    <i class="fa-solid fa-graduation-cap"></i> Modul Skripsi Multi-Role
+                </div>
+            </div>
+
+            <!-- Login Form -->
+            <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Username</label>
+                    <div class="relative">
+                        <i class="fa-solid fa-user absolute left-3.5 top-3 text-slate-400 text-sm"></i>
+                        <input type="text" id="loginUsername" required placeholder="Masukkan username" class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all">
+                    </div>
+                </div>
+
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider">Password</label>
+                        <button type="button" onclick="openForgotPasswordModal()" class="text-[11px] font-semibold text-amber-600 hover:text-amber-700 hover:underline">
+                            Lupa Password?
+                        </button>
+                    </div>
+                    <div class="relative">
+                        <i class="fa-solid fa-lock absolute left-3.5 top-3 text-slate-400 text-sm"></i>
+                        <input type="password" id="loginPassword" required placeholder="Masukkan password" class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all">
+                    </div>
+                </div>
+
+                <div id="loginErrorMsg" class="hidden text-xs text-rose-600 bg-rose-50 border border-rose-200 p-2.5 rounded-xl font-medium text-center">
+                    Username atau password salah!
+                </div>
+
+                <button type="submit" class="w-full py-3 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl text-sm transition-colors shadow-lg shadow-amber-500/25 flex items-center justify-center space-x-2">
+                    <i class="fa-solid fa-right-to-bracket"></i>
+                    <span>Masuk ke Sistem</span>
+                </button>
+            </form>
+
+            <!-- Quick Demo Accounts Switcher -->
+            <div class="mt-8 pt-6 border-t border-slate-100">
+                <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400 text-center mb-3">Pilih Akun Demo (Untuk Pengujian Dosen):</p>
+                <div class="grid grid-cols-3 gap-2">
+                    <button type="button" onclick="fillLogin('admin', 'admin123')" class="p-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-center transition-colors">
+                        <div class="text-[10px] font-bold text-slate-400">ROLE 1</div>
+                        <div class="text-xs font-bold text-slate-800">Admin</div>
+                        <div class="text-[10px] text-slate-500 mt-0.5">Full Access</div>
+                    </button>
+                    <button type="button" onclick="fillLogin('petugas', 'petugas123')" class="p-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-center transition-colors">
+                        <div class="text-[10px] font-bold text-slate-400">ROLE 2</div>
+                        <div class="text-xs font-bold text-emerald-700">Petugas</div>
+                        <div class="text-[10px] text-slate-500 mt-0.5">Operasional</div>
+                    </button>
+                    <button type="button" onclick="fillLogin('owner', 'owner123')" class="p-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-center transition-colors">
+                        <div class="text-[10px] font-bold text-slate-400">ROLE 3</div>
+                        <div class="text-xs font-bold text-amber-700">Pemilik</div>
+                        <div class="text-[10px] text-slate-500 mt-0.5">Executive</div>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== MAIN APPLICATION LAYOUT ==================== -->
+    <div id="mainApp" class="hidden flex-1 flex flex-col">
+        <!-- Navigation Bar -->
+        <header class="bg-white border-b border-slate-200 sticky top-0 z-30 no-print">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between h-16">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-xl bg-amber-500 flex items-center justify-center text-white shadow-md shadow-amber-200">
+                            <i class="fa-solid fa-egg text-xl"></i>
+                        </div>
+                        <div>
+                            <h1 class="font-bold text-lg text-slate-900 leading-tight">SIM-STOK TELUR ASIN</h1>
+                            <p class="text-xs text-slate-500 font-medium">Sistem Monitoring Persediaan Barang Web</p>
+                        </div>
+                    </div>
+
+                    <!-- Right Nav User Info & Actions -->
+                    <div class="flex items-center space-x-3">
+                        <!-- Notification Bell -->
+                        <div id="alertNotificationBtn" onclick="switchTab('products')" class="relative cursor-pointer p-2 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-colors">
+                            <i class="fa-regular fa-bell text-xl"></i>
+                            <span id="lowStockBadge" class="hidden absolute top-1 right-1 w-4 h-4 bg-rose-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-sm">0</span>
+                        </div>
+
+                        <div class="h-6 w-px bg-slate-200 hidden sm:block"></div>
+
+                        <!-- Active Role Avatar Info -->
+                        <div class="flex items-center space-x-3 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200">
+                            <div id="userRoleAvatar" class="w-8 h-8 rounded-lg text-white flex items-center justify-center text-xs font-bold shadow-sm">
+                                ADM
+                            </div>
+                            <div class="hidden sm:block text-left">
+                                <div id="userNameDisplay" class="text-xs font-bold text-slate-800">Administrator</div>
+                                <div id="userRoleBadge" class="text-[10px] font-semibold text-slate-500">Super Admin</div>
+                            </div>
+                        </div>
+
+                        <!-- Logout Button -->
+                        <button onclick="handleLogout()" title="Keluar / Logout" class="p-2 text-rose-600 hover:bg-rose-50 rounded-xl transition-colors border border-transparent hover:border-rose-200">
+                            <i class="fa-solid fa-right-from-bracket text-lg"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Body Area -->
+        <div class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col md:flex-row gap-6">
+
+            <!-- Sidebar Navigation Menu -->
+            <aside class="w-full md:w-64 flex-shrink-0 no-print">
+                <nav class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm space-y-1.5 sticky top-22">
+                    <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-3 mb-2">Menu Navigasi</div>
+
+                    <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-btn active-nav w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-medium text-sm transition-all text-slate-600 hover:bg-slate-100">
+                        <i class="fa-solid fa-chart-pie w-5 text-center text-lg"></i>
+                        <span>Dashboard Analytics</span>
+                    </button>
+
+                    <button onclick="switchTab('products')" id="nav-products" class="nav-btn w-full flex items-center justify-between px-4 py-3 rounded-xl font-medium text-sm transition-all text-slate-600 hover:bg-slate-100">
+                        <div class="flex items-center space-x-3">
+                            <i class="fa-solid fa-boxes-stacked w-5 text-center text-lg"></i>
+                            <span>Master Data Stok</span>
+                        </div>
+                        <span id="productCountBadge" class="bg-slate-100 text-slate-600 text-xs px-2 py-0.5 rounded-full font-semibold">0</span>
+                    </button>
+
+                    <!-- Operasional Menu (Hidden for Owner) -->
+                    <div class="role-operasional-menu space-y-1.5">
+                        <button onclick="switchTab('in-transaction')" id="nav-in-transaction" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-medium text-sm transition-all text-slate-600 hover:bg-slate-100">
+                            <i class="fa-solid fa-file-circle-plus w-5 text-center text-lg text-emerald-600"></i>
+                            <span>Barang Masuk</span>
+                        </button>
+
+                        <button onclick="switchTab('out-transaction')" id="nav-out-transaction" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-medium text-sm transition-all text-slate-600 hover:bg-slate-100">
+                            <i class="fa-solid fa-file-circle-minus w-5 text-center text-lg text-rose-600"></i>
+                            <span>Barang Keluar</span>
+                        </button>
+                    </div>
+
+                    <button onclick="switchTab('reports')" id="nav-reports" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-medium text-sm transition-all text-slate-600 hover:bg-slate-100">
+                        <i class="fa-solid fa-clock-rotate-left w-5 text-center text-lg text-amber-600"></i>
+                        <span>Riwayat & Laporan</span>
+                    </button>
+
+                    <!-- User Management (Admin Only) -->
+                    <div id="adminUserMgmtContainer" class="hidden">
+                        <button onclick="switchTab('users')" id="nav-users" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-medium text-sm transition-all text-slate-600 hover:bg-slate-100">
+                            <i class="fa-solid fa-users-gear w-5 text-center text-lg text-indigo-600"></i>
+                            <span>Kelola User System</span>
+                        </button>
+                    </div>
+
+                    <!-- Admin Reset Option -->
+                    <div id="adminResetContainer" class="pt-4 mt-4 border-t border-slate-100">
+                        <button onclick="resetDataToDefault()" class="w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl font-medium text-xs text-rose-600 hover:bg-rose-50 transition-colors">
+                            <i class="fa-solid fa-arrow-rotate-left w-5 text-center"></i>
+                            <span>Reset Sample Data</span>
+                        </button>
+                    </div>
+                </nav>
+            </aside>
+
+            <!-- Main Content Display -->
+            <main class="flex-1 min-w-0">
+
+                <!-- Welcome Role Banner Notice -->
+                <div id="roleNoticeBanner" class="mb-6 p-4 rounded-2xl border flex items-center justify-between no-print transition-all">
+                    <div class="flex items-center space-x-3">
+                        <div id="noticeIcon" class="w-10 h-10 rounded-xl flex items-center justify-center text-lg font-bold"></div>
+                        <div>
+                            <h3 id="noticeTitle" class="text-sm font-bold text-slate-900"></h3>
+                            <p id="noticeDesc" class="text-xs text-slate-600 mt-0.5"></p>
+                        </div>
+                    </div>
+                    <span id="noticeRoleBadge" class="hidden sm:inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider"></span>
+                </div>
+
+                <!-- TAB 1: DASHBOARD ANALYTICS -->
+                <section id="tab-dashboard" class="tab-content space-y-6">
+                    <!-- Top Summary Cards -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex items-center justify-between">
+                            <div>
+                                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Varian Telur</p>
+                                <p id="dashTotalTypes" class="text-2xl font-bold text-slate-800 mt-1">0 <span class="text-xs font-normal text-slate-500">jenis</span></p>
+                                <span class="inline-flex items-center text-[11px] font-medium text-slate-500 mt-1">
+                                    <i class="fa-solid fa-cube mr-1"></i> Katalog Produk
+                                </span>
+                            </div>
+                            <div class="w-12 h-12 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center text-xl">
+                                <i class="fa-solid fa-egg"></i>
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex items-center justify-between">
+                            <div>
+                                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Stok Fisik</p>
+                                <p id="dashTotalStock" class="text-2xl font-bold text-slate-800 mt-1">0 <span class="text-xs font-normal text-slate-500">butir</span></p>
+                                <span class="inline-flex items-center text-[11px] font-medium text-emerald-600 mt-1">
+                                    <i class="fa-solid fa-check-circle mr-1"></i> Ter-update Realtime
+                                </span>
+                            </div>
+                            <div class="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-xl">
+                                <i class="fa-solid fa-boxes-stacked"></i>
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex items-center justify-between">
+                            <div>
+                                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Mutasi Hari Ini</p>
+                                <p id="dashTodayMutation" class="text-2xl font-bold text-indigo-600 mt-1">0 <span class="text-xs font-normal text-slate-500">butir</span></p>
+                                <span class="inline-flex items-center text-[11px] font-medium text-indigo-600 mt-1">
+                                    <i class="fa-solid fa-arrow-right-arrow-left mr-1"></i> In / Out Log
+                                </span>
+                            </div>
+                            <div class="w-12 h-12 rounded-2xl bg-indigo-100 text-indigo-600 flex items-center justify-center text-xl">
+                                <i class="fa-solid fa-right-left"></i>
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex items-center justify-between">
+                            <div>
+                                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Stok Kritis / Menipis</p>
+                                <p id="dashLowStockCount" class="text-2xl font-bold text-rose-600 mt-1">0 <span class="text-xs font-normal text-slate-500">varian</span></p>
+                                <span class="inline-flex items-center text-[11px] font-medium text-rose-600 mt-1">
+                                    <i class="fa-solid fa-triangle-exclamation mr-1"></i> Perlu Restock
+                                </span>
+                            </div>
+                            <div class="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center text-xl border border-rose-200">
+                                <i class="fa-solid fa-triangle-exclamation"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Low Stock Alert Banner -->
+                    <div id="lowStockWidget" class="hidden bg-rose-50 border border-rose-200 rounded-2xl p-4">
+                        <div class="flex items-start space-x-3">
+                            <i class="fa-solid fa-triangle-exclamation text-rose-600 text-xl mt-0.5"></i>
+                            <div class="flex-1">
+                                <h3 class="text-sm font-bold text-rose-900">PERINGATAN STOK MENIPIS / HABIS!</h3>
+                                <p class="text-xs text-rose-700 mt-0.5">Varian telur asin berikut telah mencapai atau berada di bawah ambang batas stok minimum.</p>
+                                <div id="lowStockItemsList" class="mt-3 flex flex-wrap gap-2"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Visual Charts -->
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="lg:col-span-2 bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm">
+                            <div class="flex items-center justify-between mb-4">
+                                <div>
+                                    <h3 class="font-bold text-slate-800 text-base">Monitoring Volume Stok Fisik</h3>
+                                    <p class="text-xs text-slate-400">Stok riil vs Batas Minimum (Threshold)</p>
+                                </div>
+                            </div>
+                            <div class="h-64 relative">
+                                <canvas id="stockChart"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm">
+                            <div class="flex items-center justify-between mb-4">
+                                <div>
+                                    <h3 class="font-bold text-slate-800 text-base">Proporsi Kategori</h3>
+                                    <p class="text-xs text-slate-400">Distribusi variasi persediaan</p>
+                                </div>
+                            </div>
+                            <div class="h-64 relative flex items-center justify-center">
+                                <canvas id="categoryChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Activity Table Preview -->
+                    <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="font-bold text-slate-800 text-base">Aktivitas Transaksi Terakhir</h3>
+                            <button onclick="switchTab('reports')" class="text-xs font-semibold text-amber-600 hover:text-amber-700">Lihat Laporan Lengkap <i class="fa-solid fa-arrow-right ml-1"></i></button>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse text-sm">
+                                <thead>
+                                    <tr class="border-b border-slate-200 text-xs text-slate-400 uppercase tracking-wider bg-slate-50/50">
+                                        <th class="py-3 px-4 rounded-l-lg">Tanggal</th>
+                                        <th class="py-3 px-4">Tipe</th>
+                                        <th class="py-3 px-4">Nama Produk</th>
+                                        <th class="py-3 px-4">Jumlah</th>
+                                        <th class="py-3 px-4">Sumber / Tujuan</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recentActivityTable" class="divide-y divide-slate-100"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- TAB 2: DATA BARANG (MASTER STOK) -->
+                <section id="tab-products" class="tab-content hidden space-y-6">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+                        <div>
+                            <h2 class="text-lg font-bold text-slate-800">Master Data Persediaan Telur Asin</h2>
+                            <p class="text-xs text-slate-500">Daftar katalog varian, batasan minimum stok, dan penetapan harga.</p>
+                        </div>
+                        <button id="btnAddProduct" onclick="openProductModal()" class="w-full sm:w-auto bg-amber-500 hover:bg-amber-600 text-white font-medium px-4 py-2.5 rounded-xl text-sm flex items-center justify-center space-x-2 transition-colors shadow-md shadow-amber-500/20">
+                            <i class="fa-solid fa-plus"></i>
+                            <span>Tambah Variasi Telur</span>
+                        </button>
+                    </div>
+
+                    <!-- Filters & Search -->
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        <div class="relative flex-1">
+                            <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-slate-400 text-sm"></i>
+                            <input type="text" id="productSearchInput" oninput="renderProductsTable()" placeholder="Cari Kode SKU / Nama Telur Asin..." class="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-amber-500">
+                        </div>
+                        <select id="productFilterCategory" onchange="renderProductsTable()" class="bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-600 focus:outline-none">
+                            <option value="">Semua Kategori</option>
+                            <option value="Original">Telur Asin Original Rebus</option>
+                            <option value="Bakar">Telur Asin Bakar</option>
+                            <option value="Asap">Telur Asin Asap</option>
+                            <option value="Bumbu/Rasa">Telur Asin Bumbu / Masir</option>
+                            <option value="Mentah">Telur Mentah Salted</option>
+                            <option value="Kemasan">Kemasan Paket</option>
+                        </select>
+                    </div>
+
+                    <!-- Products Table -->
+                    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse text-sm">
+                                <thead>
+                                    <tr class="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                                        <th class="py-3.5 px-4">SKU / Kode</th>
+                                        <th class="py-3.5 px-4">Nama Variasi Telur</th>
+                                        <th class="py-3.5 px-4">Kategori</th>
+                                        <th class="py-3.5 px-4">Harga / Satuan</th>
+                                        <th class="py-3.5 px-4">Stok Saat Ini</th>
+                                        <th class="py-3.5 px-4">Batas Min.</th>
+                                        <th class="py-3.5 px-4">Status</th>
+                                        <th class="py-3.5 px-4 text-center action-col">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="productsTableBody" class="divide-y divide-slate-100"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- TAB 3: TRANSAKSI BARANG MASUK -->
+                <section id="tab-in-transaction" class="tab-content hidden space-y-6">
+                    <div class="max-w-2xl mx-auto bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6">
+                        <div class="border-b border-slate-100 pb-4 mb-5 flex items-center space-x-3">
+                            <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-lg">
+                                <i class="fa-solid fa-boxes-packing"></i>
+                            </div>
+                            <div>
+                                <h2 class="text-base font-bold text-slate-800">Form Transaksi Barang Masuk</h2>
+                                <p class="text-xs text-slate-500">Pencatatan pasokan hasil pengasinan/produksi atau pembelian supplier.</p>
+                            </div>
+                        </div>
+
+                        <form id="formBarangMasuk" onsubmit="handleBarangMasuk(event)" class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Tanggal Transaksi</label>
+                                <input type="date" id="inTanggal" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-emerald-500">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Pilih Produk Telur Asin</label>
+                                <select id="inProductSelect" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-emerald-500"></select>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Jumlah Masuk (Butir/Paket)</label>
+                                    <input type="number" id="inJumlah" min="1" required placeholder="100" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-emerald-500">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Sumber / Unit Produksi</label>
+                                    <input type="text" id="inSumber" required placeholder="Dapur Pengasinan / Supplier Brebes" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-emerald-500">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Catatan Tambahan (Opsional)</label>
+                                <textarea id="inCatatan" rows="3" placeholder="Keterangan mutu, nomor batch, dll..." class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-emerald-500"></textarea>
+                            </div>
+
+                            <div class="pt-2">
+                                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2.5 rounded-xl text-sm flex items-center justify-center space-x-2 transition-colors shadow-md shadow-emerald-200">
+                                    <i class="fa-solid fa-check-circle"></i>
+                                    <span>Simpan Transaksi Masuk</span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </section>
+
+                <!-- TAB 4: TRANSAKSI BARANG KELUAR -->
+                <section id="tab-out-transaction" class="tab-content hidden space-y-6">
+                    <div class="max-w-2xl mx-auto bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6">
+                        <div class="border-b border-slate-100 pb-4 mb-5 flex items-center space-x-3">
+                            <div class="w-10 h-10 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center text-lg">
+                                <i class="fa-solid fa-truck-ramp-box"></i>
+                            </div>
+                            <div>
+                                <h2 class="text-base font-bold text-slate-800">Form Transaksi Barang Keluar</h2>
+                                <p class="text-xs text-slate-500">Pencatatan penjualan, pengiriman agen cabang, atau retur telur rusak.</p>
+                            </div>
+                        </div>
+
+                        <form id="formBarangKeluar" onsubmit="handleBarangKeluar(event)" class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Tanggal Transaksi</label>
+                                <input type="date" id="outTanggal" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-rose-500">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Pilih Produk Telur Asin</label>
+                                <select id="outProductSelect" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-rose-500"></select>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Jumlah Keluar (Butir/Paket)</label>
+                                    <input type="number" id="outJumlah" min="1" required placeholder="50" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-rose-500">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Kategori Keluar</label>
+                                    <select id="outStatus" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-rose-500">
+                                        <option value="Terjual">Penjualan Retail / Terjual</option>
+                                        <option value="Distribusi Cabang">Distribusi Agen / Cabang</option>
+                                        <option value="Rusak/Pecah">Rusak / Pecah / Retur</option>
+                                        <option value="Expired">Kadaluwarsa</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Tujuan / Nama Pembeli</label>
+                                <input type="text" id="outTujuan" required placeholder="Toko Oleh-Oleh Berkah / Konsumen" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-rose-500">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Catatan Tambahan (Opsional)</label>
+                                <textarea id="outCatatan" rows="2" placeholder="Nomor nota, nomor resi, dll..." class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-rose-500"></textarea>
+                            </div>
+
+                            <div class="pt-2">
+                                <button type="submit" class="w-full bg-rose-600 hover:bg-rose-700 text-white font-medium py-2.5 rounded-xl text-sm flex items-center justify-center space-x-2 transition-colors shadow-md shadow-rose-200">
+                                    <i class="fa-solid fa-minus-circle"></i>
+                                    <span>Simpan Transaksi Keluar</span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </section>
+
+                <!-- TAB 5: RIWAYAT & LAPORAN -->
+                <section id="tab-reports" class="tab-content hidden space-y-6">
+                    <!-- Print Only Header -->
+                    <div class="hidden print-only mb-6">
+                        <div class="text-center border-b pb-4">
+                            <h1 class="text-2xl font-bold">LAPORAN MUTASI PERSERDIAAN TELUR ASIN</h1>
+                            <p class="text-sm text-gray-600">Sistem Informasi Monitoring Persediaan Stok Gudang</p>
+                            <p id="printDateRange" class="text-xs text-gray-500 mt-1"></p>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm no-print">
+                        <div>
+                            <h2 class="text-lg font-bold text-slate-800">Laporan Rekapitulasi & Log Mutasi</h2>
+                            <p class="text-xs text-slate-500">Rekap transaksi barang masuk dan keluar untuk pertanggungjawaban & laporan skripsi.</p>
+                        </div>
+                        <div class="flex items-center space-x-2 w-full md:w-auto">
+                            <button onclick="exportToCSV()" class="flex-1 md:flex-none px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold flex items-center justify-center space-x-2 transition-colors">
+                                <i class="fa-solid fa-file-excel text-emerald-600"></i>
+                                <span>Ekspor CSV</span>
+                            </button>
+                            <button onclick="window.print()" class="flex-1 md:flex-none px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-semibold flex items-center justify-center space-x-2 transition-colors shadow-sm">
+                                <i class="fa-solid fa-print"></i>
+                                <span>Cetak Laporan</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Filter Controls -->
+                    <div class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm grid grid-cols-1 sm:grid-cols-3 gap-3 no-print">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-500 mb-1">Filter Tipe Transaksi</label>
+                            <select id="reportFilterType" onchange="renderReportsTable()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none">
+                                <option value="">Semua Transaksi</option>
+                                <option value="MASUK">Hanya Barang Masuk</option>
+                                <option value="KELUAR">Hanya Barang Keluar</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-500 mb-1">Dari Tanggal</label>
+                            <input type="date" id="reportStartDate" onchange="renderReportsTable()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-500 mb-1">Sampai Tanggal</label>
+                            <input type="date" id="reportEndDate" onchange="renderReportsTable()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none">
+                        </div>
+                    </div>
+
+                    <!-- Log Table -->
+                    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse text-sm">
+                                <thead>
+                                    <tr class="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                                        <th class="py-3.5 px-4">Waktu / Tanggal</th>
+                                        <th class="py-3.5 px-4">Tipe</th>
+                                        <th class="py-3.5 px-4">SKU & Nama Barang</th>
+                                        <th class="py-3.5 px-4">Jumlah</th>
+                                        <th class="py-3.5 px-4">Tujuan / Sumber</th>
+                                        <th class="py-3.5 px-4">Status / Ket</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="reportsTableBody" class="divide-y divide-slate-100"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- TAB 6: KELOLA USER SYSTEM (Admin Only) -->
+                <section id="tab-users" class="tab-content hidden space-y-6">
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+                        <h2 class="text-lg font-bold text-slate-800">Manajemen Akun Pengguna & Reset Password</h2>
+                        <p class="text-xs text-slate-500">Kelola akun pengguna, hak akses, dan fitur reset kata sandi langsung oleh Admin.</p>
+                    </div>
+
+                    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse text-sm">
+                                <thead>
+                                    <tr class="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                                        <th class="py-3.5 px-4">Username</th>
+                                        <th class="py-3.5 px-4">Nama Lengkap</th>
+                                        <th class="py-3.5 px-4">Peran (Role)</th>
+                                        <th class="py-3.5 px-4">Email Pemulihan</th>
+                                        <th class="py-3.5 px-4 text-center">Aksi / Reset</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="usersTableBody" class="divide-y divide-slate-100"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- MODAL ADD/EDIT PRODUCT -->
+    <div id="productModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-xl max-w-md w-full p-6 space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                <h3 id="modalTitle" class="text-base font-bold text-slate-800">Tambah Varian Telur Asin</h3>
+                <button onclick="closeProductModal()" class="text-slate-400 hover:text-slate-600">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <form id="formProduct" onsubmit="saveProduct(event)" class="space-y-3">
+                <input type="hidden" id="prodId">
+                
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Kode SKU</label>
+                    <input type="text" id="prodSku" required placeholder="TLR-001" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-amber-500">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Nama Varian Telur Asin</label>
+                    <input type="text" id="prodName" required placeholder="Telur Asin Original Masir" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-amber-500">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Kategori</label>
+                        <select id="prodCategory" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-amber-500">
+                            <option value="Original">Original Rebus</option>
+                            <option value="Bakar">Bakar</option>
+                            <option value="Asap">Asap</option>
+                            <option value="Bumbu/Rasa">Bumbu / Masir</option>
+                            <option value="Mentah">Mentah Salted</option>
+                            <option value="Kemasan">Kemasan Paket</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Harga Jual (Rp)</label>
+                        <input type="number" id="prodPrice" required placeholder="3500" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-amber-500">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Stok Awal (Butir)</label>
+                        <input type="number" id="prodStock" required placeholder="100" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-amber-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Batas Minimum Alert</label>
+                        <input type="number" id="prodMinStock" required placeholder="20" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-amber-500">
+                    </div>
+                </div>
+
+                <div class="pt-3 flex justify-end space-x-2">
+                    <button type="button" onclick="closeProductModal()" class="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 text-xs font-semibold hover:bg-slate-50">Batal</button>
+                    <button type="submit" class="px-4 py-2 rounded-xl bg-amber-500 text-white text-xs font-semibold hover:bg-amber-600">Simpan Data</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL FORGOT PASSWORD (SIMULATION) -->
+    <div id="forgotPasswordModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl border border-slate-100 shadow-2xl max-w-md w-full p-6 space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                <div class="flex items-center space-x-2">
+                    <div class="w-8 h-8 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center text-sm font-bold">
+                        <i class="fa-solid fa-key"></i>
+                    </div>
+                    <h3 class="text-base font-bold text-slate-800">Pemulihan Kata Sandi</h3>
+                </div>
+                <button onclick="closeForgotPasswordModal()" class="text-slate-400 hover:text-slate-600">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Step 1: Input Account -->
+            <form id="forgotStep1" onsubmit="handleForgotVerify(event)" class="space-y-4">
+                <p class="text-xs text-slate-500">Masukkan <b>Username</b> atau <b>Email Pemulihan</b> akun Anda untuk mereset kata sandi.</p>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Username / Email</label>
+                    <input type="text" id="forgotInputUser" required placeholder="Contoh: petugas / admin@telur.com" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-amber-500">
+                </div>
+                <div id="forgotErrorMsg" class="hidden text-xs text-rose-600 bg-rose-50 border border-rose-200 p-2.5 rounded-xl font-medium">
+                    Pengguna tidak ditemukan dalam database!
+                </div>
+                <button type="submit" class="w-full py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl text-sm transition-colors shadow-md">
+                    Verifikasi Akun
+                </button>
+            </form>
+
+            <!-- Step 2: Set New Password -->
+            <form id="forgotStep2" onsubmit="handleForgotReset(event)" class="hidden space-y-4">
+                <div class="bg-emerald-50 border border-emerald-200 p-3 rounded-xl text-xs text-emerald-800 font-medium">
+                    <i class="fa-solid fa-circle-check mr-1 text-emerald-600"></i> Akun terverifikasi! Masukkan password baru untuk <b id="verifiedUsernameDisplay"></b>.
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Password Baru</label>
+                    <input type="password" id="newPasswordInput" required placeholder="Masukkan password baru" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-amber-500">
+                </div>
+                <button type="submit" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-sm transition-colors shadow-md">
+                    Simpan Password Baru
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Application Script Core & State -->
+    <script>
+        // Preset Accounts Configuration (Default Data)
+        const DEFAULT_ACCOUNTS = {
+            'admin': { username: 'admin', pass: 'admin123', name: 'Budi Santoso', email: 'admin@telur.com', role: 'ADMIN', roleLabel: 'Super Admin', color: 'bg-slate-800' },
+            'petugas': { username: 'petugas', pass: 'petugas123', name: 'Siti Rahma', email: 'petugas@telur.com', role: 'PETUGAS', roleLabel: 'Petugas Gudang', color: 'bg-emerald-600' },
+            'owner': { username: 'owner', pass: 'owner123', name: 'H. Ahmad Brebes', email: 'owner@telur.com', role: 'OWNER', roleLabel: 'Pemilik Toko', color: 'bg-amber-600' }
+        };
+
+        // Initial Sample Data
+        const INITIAL_PRODUCTS = [
+            { id: '1', sku: 'TLR-ORIG-01', name: 'Telur Asin Original Rebus', category: 'Original', price: 3500, stock: 450, minStock: 100 },
+            { id: '2', sku: 'TLR-BAKAR-02', name: 'Telur Asin Bakar Rempah', category: 'Bakar', price: 4000, stock: 35, minStock: 50 }, // Low
+            { id: '3', sku: 'TLR-ASAP-03', name: 'Telur Asin Asap Premium', category: 'Asap', price: 4500, stock: 120, minStock: 40 },
+            { id: '4', sku: 'TLR-MASIR-04', name: 'Telur Asin Bumbu Masir Super', category: 'Bumbu/Rasa', price: 4200, stock: 12, minStock: 30 }, // Low
+            { id: '5', sku: 'TLR-PAKET-06', name: 'Telur Asin Pack Isi 6', category: 'Kemasan', price: 22000, stock: 80, minStock: 25 },
+            { id: '6', sku: 'TLR-MNTH-05', name: 'Telur Mentah Salted Batch A', category: 'Mentah', price: 3000, stock: 280, minStock: 80 }
+        ];
+
+        const INITIAL_LOGS = [
+            { id: 'l1', timestamp: new Date(Date.now() - 86400000 * 2).toISOString(), date: new Date(Date.now() - 86400000 * 2).toISOString().split('T')[0], type: 'MASUK', productId: '1', sku: 'TLR-ORIG-01', productName: 'Telur Asin Original Rebus', amount: 200, sourceOrTarget: 'Dapur Utama Brebes', status: 'Selesai', note: 'Panen Hasil Pengasinan' },
+            { id: 'l2', timestamp: new Date(Date.now() - 86400000 * 1).toISOString(), date: new Date(Date.now() - 86400000 * 1).toISOString().split('T')[0], type: 'KELUAR', productId: '2', sku: 'TLR-BAKAR-02', productName: 'Telur Asin Bakar Rempah', amount: 50, sourceOrTarget: 'Toko Oleh-Oleh Cabang 1', status: 'Terjual', note: 'Pengiriman Penjualan' },
+            { id: 'l3', timestamp: new Date().toISOString(), date: new Date().toISOString().split('T')[0], type: 'KELUAR', productId: '4', sku: 'TLR-MASIR-04', productName: 'Telur Asin Bumbu Masir Super', amount: 10, sourceOrTarget: 'Pengujian Mutu (QC)', status: 'Rusak/Pecah', note: 'Retak saat sortir' }
+        ];
+
+        // State Global
+        let accounts = {};
+        let currentUser = null;
+        let products = [];
+        let logs = [];
+        let verifiedForgotUserKey = null;
+        let stockChartInstance = null;
+        let categoryChartInstance = null;
+
+        // Init App On Load
+        window.addEventListener('DOMContentLoaded', () => {
+            loadAccountsData();
+            loadStorageData();
+            checkSession();
+            setDefaultDates();
+        });
+
+        function loadAccountsData() {
+            const stored = localStorage.getItem('sim_telur_accounts');
+            accounts = stored ? JSON.parse(stored) : JSON.parse(JSON.stringify(DEFAULT_ACCOUNTS));
+            if (!stored) localStorage.setItem('sim_telur_accounts', JSON.stringify(accounts));
+        }
+
+        function saveAccountsData() {
+            localStorage.setItem('sim_telur_accounts', JSON.stringify(accounts));
+        }
+
+        // Authentication & Session
+        function checkSession() {
+            const session = sessionStorage.getItem('sim_telur_session');
+            if (session) {
+                currentUser = JSON.parse(session);
+                showMainApp();
+            } else {
+                showLoginScreen();
+            }
+        }
+
+        function fillLogin(u, p) {
+            document.getElementById('loginUsername').value = u;
+            document.getElementById('loginPassword').value = p;
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const u = document.getElementById('loginUsername').value.trim().toLowerCase();
+            const p = document.getElementById('loginPassword').value.trim();
+            const err = document.getElementById('loginErrorMsg');
+
+            if (accounts[u] && accounts[u].pass === p) {
+                currentUser = accounts[u];
+                sessionStorage.setItem('sim_telur_session', JSON.stringify(currentUser));
+                err.classList.add('hidden');
+                showMainApp();
+            } else {
+                err.classList.remove('hidden');
+            }
+        }
+
+        function handleLogout() {
+            if (confirm('Apakah Anda yakin ingin keluar dari sistem?')) {
+                sessionStorage.removeItem('sim_telur_session');
+                currentUser = null;
+                showLoginScreen();
+            }
+        }
+
+        function showLoginScreen() {
+            document.getElementById('loginScreen').classList.remove('hidden');
+            document.getElementById('mainApp').classList.add('hidden');
+        }
+
+        // FORGOT PASSWORD MODAL LOGIC
+        function openForgotPasswordModal() {
+            document.getElementById('forgotPasswordModal').classList.remove('hidden');
+            document.getElementById('forgotStep1').classList.remove('hidden');
+            document.getElementById('forgotStep2').classList.add('hidden');
+            document.getElementById('forgotErrorMsg').classList.add('hidden');
+            document.getElementById('forgotInputUser').value = '';
+            document.getElementById('newPasswordInput').value = '';
+            verifiedForgotUserKey = null;
+        }
+
+        function closeForgotPasswordModal() {
+            document.getElementById('forgotPasswordModal').classList.add('hidden');
+        }
+
+        function handleForgotVerify(e) {
+            e.preventDefault();
+            const query = document.getElementById('forgotInputUser').value.trim().toLowerCase();
+            const err = document.getElementById('forgotErrorMsg');
+
+            let foundKey = null;
+            Object.keys(accounts).forEach(k => {
+                if (accounts[k].username.toLowerCase() === query || accounts[k].email.toLowerCase() === query) {
+                    foundKey = k;
+                }
+            });
+
+            if (foundKey) {
+                verifiedForgotUserKey = foundKey;
+                err.classList.add('hidden');
+                document.getElementById('forgotStep1').classList.add('hidden');
+                document.getElementById('forgotStep2').classList.remove('hidden');
+                document.getElementById('verifiedUsernameDisplay').textContent = `${accounts[foundKey].name} (${accounts[foundKey].username})`;
+            } else {
+                err.classList.remove('hidden');
+            }
+        }
+
+        function handleForgotReset(e) {
+            e.preventDefault();
+            const newPass = document.getElementById('newPasswordInput').value.trim();
+            if (!newPass || !verifiedForgotUserKey) return;
+
+            accounts[verifiedForgotUserKey].pass = newPass;
+            saveAccountsData();
+
+            alert('Password berhasil diperbarui! Silakan masuk menggunakan password baru.');
+            closeForgotPasswordModal();
+            fillLogin(accounts[verifiedForgotUserKey].username, newPass);
+        }
+
+        // Apply Role Access Controls
+        function showMainApp() {
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('mainApp').classList.remove('hidden');
+
+            // Render Nav Header User Info
+            document.getElementById('userNameDisplay').textContent = currentUser.name;
+            document.getElementById('userRoleBadge').textContent = currentUser.roleLabel;
+            
+            const avatar = document.getElementById('userRoleAvatar');
+            avatar.textContent = currentUser.role.substring(0, 3);
+            avatar.className = `w-8 h-8 rounded-lg text-white flex items-center justify-center text-xs font-bold shadow-sm ${currentUser.color}`;
+
+            // Configure Role UI Restrictions
+            const banner = document.getElementById('roleNoticeBanner');
+            const noticeIcon = document.getElementById('noticeIcon');
+            const noticeTitle = document.getElementById('noticeTitle');
+            const noticeDesc = document.getElementById('noticeDesc');
+            const noticeRoleBadge = document.getElementById('noticeRoleBadge');
+            const adminReset = document.getElementById('adminResetContainer');
+            const adminUserMgmt = document.getElementById('adminUserMgmtContainer');
+            const btnAddProduct = document.getElementById('btnAddProduct');
+            const operasionalMenus = document.querySelectorAll('.role-operasional-menu');
+
+            if (currentUser.role === 'OWNER') {
+                // Owner Mode
+                banner.className = 'mb-6 p-4 rounded-2xl border border-amber-200 bg-amber-50/80 flex items-center justify-between no-print';
+                noticeIcon.className = 'w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center text-lg font-bold shadow-sm';
+                noticeIcon.innerHTML = '<i class="fa-solid fa-user-tie"></i>';
+                noticeTitle.textContent = `Selamat Datang, ${currentUser.name} (Pemilik Toko)`;
+                noticeDesc.textContent = 'Mode Ringkasan Eksekutif: Akses monitoring stok realtime, analisis visual, dan cetak laporan.';
+                noticeRoleBadge.className = 'px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-200 text-amber-900';
+                noticeRoleBadge.textContent = 'Akses Pemilik (Read-Only)';
+
+                adminReset.classList.add('hidden');
+                adminUserMgmt.classList.add('hidden');
+                btnAddProduct.classList.add('hidden');
+                operasionalMenus.forEach(m => m.classList.add('hidden'));
+
+            } else if (currentUser.role === 'PETUGAS') {
+                // Petugas Mode
+                banner.className = 'mb-6 p-4 rounded-2xl border border-emerald-200 bg-emerald-50/80 flex items-center justify-between no-print';
+                noticeIcon.className = 'w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center text-lg font-bold shadow-sm';
+                noticeIcon.innerHTML = '<i class="fa-solid fa-clipboard-user"></i>';
+                noticeTitle.textContent = `Selamat Datang, ${currentUser.name} (Petugas Operasional)`;
+                noticeDesc.textContent = 'Mode Operasional Gudang: Pencatatan mutasi barang masuk & keluar, serta pengawasan stok.';
+                noticeRoleBadge.className = 'px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-200 text-emerald-900';
+                noticeRoleBadge.textContent = 'Akses Petugas Operasional';
+
+                adminReset.classList.add('hidden');
+                adminUserMgmt.classList.add('hidden');
+                btnAddProduct.classList.add('hidden');
+                operasionalMenus.forEach(m => m.classList.remove('hidden'));
+
+            } else {
+                // Admin Mode
+                banner.className = 'mb-6 p-4 rounded-2xl border border-slate-200 bg-white flex items-center justify-between no-print shadow-sm';
+                noticeIcon.className = 'w-10 h-10 rounded-xl bg-slate-800 text-white flex items-center justify-center text-lg font-bold shadow-sm';
+                noticeIcon.innerHTML = '<i class="fa-solid fa-user-shield"></i>';
+                noticeTitle.textContent = `Selamat Datang, ${currentUser.name} (Administrator)`;
+                noticeDesc.textContent = 'Akses Penuh (Full Control): Kelola Master Data, entri transaksi, hingga manajemen user.';
+                noticeRoleBadge.className = 'px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-800 border border-slate-200';
+                noticeRoleBadge.textContent = 'Super Administrator';
+
+                adminReset.classList.remove('hidden');
+                adminUserMgmt.classList.remove('hidden');
+                btnAddProduct.classList.remove('hidden');
+                operasionalMenus.forEach(m => m.classList.remove('hidden'));
+            }
+
+            switchTab('dashboard');
+        }
+
+        // Storage & Samples
+        function loadStorageData() {
+            const storedProducts = localStorage.getItem('sim_telur_products');
+            const storedLogs = localStorage.getItem('sim_telur_logs');
+
+            products = storedProducts ? JSON.parse(storedProducts) : [...INITIAL_PRODUCTS];
+            logs = storedLogs ? JSON.parse(storedLogs) : [...INITIAL_LOGS];
+
+            if (!storedProducts) localStorage.setItem('sim_telur_products', JSON.stringify(products));
+            if (!storedLogs) localStorage.setItem('sim_telur_logs', JSON.stringify(logs));
+
+            updateProductDropdowns();
+        }
+
+        function saveProductsToStorage() {
+            localStorage.setItem('sim_telur_products', JSON.stringify(products));
+            updateProductDropdowns();
+        }
+
+        function saveLogsToStorage() {
+            localStorage.setItem('sim_telur_logs', JSON.stringify(logs));
+        }
+
+        function resetDataToDefault() {
+            if (confirm('Atur ulang seluruh data ke sampel awal? (Khusus Admin)')) {
+                localStorage.removeItem('sim_telur_products');
+                localStorage.removeItem('sim_telur_logs');
+                localStorage.removeItem('sim_telur_accounts');
+                loadAccountsData();
+                loadStorageData();
+                renderAll();
+            }
+        }
+
+        function setDefaultDates() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('inTanggal').value = today;
+            document.getElementById('outTanggal').value = today;
+        }
+
+        // Navigation Switcher
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('bg-amber-50', 'text-amber-700', 'font-bold');
+            });
+
+            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+            const activeBtn = document.getElementById(`nav-${tabId}`);
+            if (activeBtn) {
+                activeBtn.classList.add('bg-amber-50', 'text-amber-700', 'font-bold');
+            }
+
+            renderAll();
+        }
+
+        function renderAll() {
+            renderDashboard();
+            renderProductsTable();
+            renderReportsTable();
+            renderUsersTable();
+        }
+
+        // Dashboard & Analytics Rendering
+        function renderDashboard() {
+            const totalTypes = products.length;
+            const totalStock = products.reduce((acc, curr) => acc + Number(curr.stock), 0);
+            
+            const todayStr = new Date().toISOString().split('T')[0];
+            const todayMutation = logs.filter(l => l.date === todayStr).reduce((acc, curr) => acc + Number(curr.amount), 0);
+
+            const lowStockItems = products.filter(p => Number(p.stock) <= Number(p.minStock));
+            const lowStockCount = lowStockItems.length;
+
+            document.getElementById('dashTotalTypes').innerHTML = `${totalTypes} <span class="text-xs font-normal text-slate-500">jenis</span>`;
+            document.getElementById('dashTotalStock').innerHTML = `${totalStock.toLocaleString('id-ID')} <span class="text-xs font-normal text-slate-500">butir</span>`;
+            document.getElementById('dashTodayMutation').innerHTML = `${todayMutation.toLocaleString('id-ID')} <span class="text-xs font-normal text-slate-500">butir</span>`;
+            document.getElementById('dashLowStockCount').innerHTML = `${lowStockCount} <span class="text-xs font-normal text-slate-500">varian</span>`;
+
+            // Badge Header Alert
+            const badge = document.getElementById('lowStockBadge');
+            if (lowStockCount > 0) {
+                badge.textContent = lowStockCount;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+
+            // Low Stock Warning Box
+            const widget = document.getElementById('lowStockWidget');
+            const widgetList = document.getElementById('lowStockItemsList');
+            if (lowStockCount > 0) {
+                widget.classList.remove('hidden');
+                widgetList.innerHTML = lowStockItems.map(p => `
+                    <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold bg-rose-100 text-rose-800 border border-rose-300">
+                        ${p.name}: <b>${p.stock} butir</b> (Batas Min: ${p.minStock})
+                    </span>
+                `).join('');
+            } else {
+                widget.classList.add('hidden');
+            }
+
+            // Recent Activity
+            const recent = [...logs].reverse().slice(0, 5);
+            const recentTbody = document.getElementById('recentActivityTable');
+            recentTbody.innerHTML = recent.length === 0 ? `<tr><td colspan="5" class="text-center py-4 text-slate-400">Belum ada transaksi</td></tr>` : 
+            recent.map(l => `
+                <tr class="hover:bg-slate-50">
+                    <td class="py-3 px-4 font-mono text-xs text-slate-500">${l.date}</td>
+                    <td class="py-3 px-4">
+                        <span class="px-2 py-0.5 text-[10px] font-bold rounded-full ${l.type === 'MASUK' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}">
+                            ${l.type}
+                        </span>
+                    </td>
+                    <td class="py-3 px-4 font-medium text-slate-800">${l.productName}</td>
+                    <td class="py-3 px-4 font-bold text-slate-700">${l.amount} butir</td>
+                    <td class="py-3 px-4 text-xs text-slate-500">${l.sourceOrTarget}</td>
+                </tr>
+            `).join('');
+
+            renderCharts();
+        }
+
+        function renderCharts() {
+            const labels = products.map(p => p.name.length > 15 ? p.name.substring(0, 15) + '...' : p.name);
+            const stockData = products.map(p => p.stock);
+            const minStockData = products.map(p => p.minStock);
+
+            const ctx1 = document.getElementById('stockChart').getContext('2d');
+            if (stockChartInstance) stockChartInstance.destroy();
+
+            stockChartInstance = new Chart(ctx1, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Stok Fisik',
+                            data: stockData,
+                            backgroundColor: '#f59e0b',
+                            borderRadius: 6,
+                        },
+                        {
+                            label: 'Batas Minimum (Threshold)',
+                            data: minStockData,
+                            backgroundColor: '#ef4444',
+                            borderRadius: 6,
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'top' } },
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
+
+            const ctx2 = document.getElementById('categoryChart').getContext('2d');
+            if (categoryChartInstance) categoryChartInstance.destroy();
+
+            const categories = {};
+            products.forEach(p => {
+                categories[p.category] = (categories[p.category] || 0) + Number(p.stock);
+            });
+
+            categoryChartInstance = new Chart(ctx2, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(categories),
+                    datasets: [{
+                        data: Object.values(categories),
+                        backgroundColor: ['#f59e0b', '#22c55e', '#06b6d4', '#ec4899', '#8b5cf6', '#64748b'],
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom' } }
+                }
+            });
+        }
+
+        // Product Catalog & CRUD
+        function renderProductsTable() {
+            const search = document.getElementById('productSearchInput').value.toLowerCase();
+            const categoryFilter = document.getElementById('productFilterCategory').value;
+
+            document.getElementById('productCountBadge').textContent = products.length;
+
+            const filtered = products.filter(p => {
+                const matchSearch = p.name.toLowerCase().includes(search) || p.sku.toLowerCase().includes(search);
+                const matchCat = categoryFilter === '' || p.category === categoryFilter;
+                return matchSearch && matchCat;
+            });
+
+            const tbody = document.getElementById('productsTableBody');
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" class="text-center py-6 text-slate-400 text-sm">Tidak ada variasi telur asin ditemukan.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(p => {
+                let badgeClass = 'bg-emerald-100 text-emerald-700';
+                let badgeText = 'Aman';
+
+                if (p.stock <= 0) {
+                    badgeClass = 'bg-rose-100 text-rose-700 font-bold';
+                    badgeText = 'Habis';
+                } else if (p.stock <= p.minStock) {
+                    badgeClass = 'bg-amber-100 text-amber-800 border border-amber-300 font-bold';
+                    badgeText = 'Menipis';
+                }
+
+                // Show Action Buttons only for Admin
+                const actionButtons = currentUser && currentUser.role === 'ADMIN' ? `
+                    <div class="flex items-center justify-center space-x-1">
+                        <button onclick="editProduct('${p.id}')" title="Edit" class="p-1.5 text-slate-400 hover:text-amber-600 rounded-lg hover:bg-slate-100">
+                            <i class="fa-solid fa-pen-to-square"></i>
+                        </button>
+                        <button onclick="deleteProduct('${p.id}')" title="Hapus" class="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-slate-100">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </div>
+                ` : `<span class="text-xs text-slate-400 italic">Read-Only</span>`;
+
+                return `
+                    <tr class="hover:bg-slate-50 transition-colors">
+                        <td class="py-3 px-4 font-mono text-xs font-semibold text-slate-600">${p.sku}</td>
+                        <td class="py-3 px-4 font-medium text-slate-800">${p.name}</td>
+                        <td class="py-3 px-4 text-xs text-slate-500">${p.category}</td>
+                        <td class="py-3 px-4 text-xs font-semibold text-slate-700">Rp ${Number(p.price).toLocaleString('id-ID')}</td>
+                        <td class="py-3 px-4 text-sm font-bold text-slate-900">${p.stock} <span class="text-xs font-normal text-slate-400">butir</span></td>
+                        <td class="py-3 px-4 text-xs text-slate-500">${p.minStock} butir</td>
+                        <td class="py-3 px-4">
+                            <span class="px-2.5 py-1 text-[10px] rounded-full ${badgeClass}">
+                                ${badgeText}
+                            </span>
+                        </td>
+                        <td class="py-3 px-4 text-center action-col">${actionButtons}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function openProductModal(isEdit = false) {
+            if (currentUser.role !== 'ADMIN') return;
+            document.getElementById('modalTitle').textContent = isEdit ? 'Edit Variasi Telur Asin' : 'Tambah Variasi Telur Asin Baru';
+            document.getElementById('productModal').classList.remove('hidden');
+        }
+
+        function closeProductModal() {
+            document.getElementById('productModal').classList.add('hidden');
+            document.getElementById('formProduct').reset();
+            document.getElementById('prodId').value = '';
+        }
+
+        function editProduct(id) {
+            if (currentUser.role !== 'ADMIN') return;
+            const p = products.find(prod => prod.id === id);
+            if (!p) return;
+
+            document.getElementById('prodId').value = p.id;
+            document.getElementById('prodSku').value = p.sku;
+            document.getElementById('prodName').value = p.name;
+            document.getElementById('prodCategory').value = p.category;
+            document.getElementById('prodPrice').value = p.price;
+            document.getElementById('prodStock').value = p.stock;
+            document.getElementById('prodMinStock').value = p.minStock;
+
+            openProductModal(true);
+        }
+
+        function saveProduct(e) {
+            e.preventDefault();
+            if (currentUser.role !== 'ADMIN') return;
+
+            const id = document.getElementById('prodId').value;
+            const sku = document.getElementById('prodSku').value.trim();
+            const name = document.getElementById('prodName').value.trim();
+            const category = document.getElementById('prodCategory').value;
+            const price = Number(document.getElementById('prodPrice').value);
+            const stock = Number(document.getElementById('prodStock').value);
+            const minStock = Number(document.getElementById('prodMinStock').value);
+
+            if (id) {
+                const index = products.findIndex(p => p.id === id);
+                if (index !== -1) products[index] = { id, sku, name, category, price, stock, minStock };
+            } else {
+                products.push({ id: Date.now().toString(), sku, name, category, price, stock, minStock });
+            }
+
+            saveProductsToStorage();
+            closeProductModal();
+            renderAll();
+        }
+
+        function deleteProduct(id) {
+            if (currentUser.role !== 'ADMIN') return;
+            if (confirm('Apakah Anda yakin ingin menghapus variasi telur asin ini?')) {
+                products = products.filter(p => p.id !== id);
+                saveProductsToStorage();
+                renderAll();
+            }
+        }
+
+        function updateProductDropdowns() {
+            const inSelect = document.getElementById('inProductSelect');
+            const outSelect = document.getElementById('outProductSelect');
+
+            const optionsHTML = products.map(p => `
+                <option value="${p.id}">${p.sku} - ${p.name} (Stok: ${p.stock})</option>
+            `).join('');
+
+            if (inSelect) inSelect.innerHTML = optionsHTML || '<option value="">Tidak ada produk</option>';
+            if (outSelect) outSelect.innerHTML = optionsHTML || '<option value="">Tidak ada produk</option>';
+        }
+
+        // Transactions Entry
+        function handleBarangMasuk(e) {
+            e.preventDefault();
+            if (currentUser.role === 'OWNER') return alert('Pemilik Toko hanya memiliki akses baca (Read-Only).');
+
+            const date = document.getElementById('inTanggal').value;
+            const productId = document.getElementById('inProductSelect').value;
+            const amount = Number(document.getElementById('inJumlah').value);
+            const source = document.getElementById('inSumber').value.trim();
+            const note = document.getElementById('inCatatan').value.trim();
+
+            const product = products.find(p => p.id === productId);
+            if (!product) return alert('Pilih varian telur.');
+
+            product.stock += amount;
+            saveProductsToStorage();
+
+            logs.push({
+                id: 'log_' + Date.now(),
+                timestamp: new Date().toISOString(),
+                date,
+                type: 'MASUK',
+                productId: product.id,
+                sku: product.sku,
+                productName: product.name,
+                amount,
+                sourceOrTarget: source,
+                status: 'Selesai',
+                note
+            });
+            saveLogsToStorage();
+
+            document.getElementById('formBarangMasuk').reset();
+            setDefaultDates();
+            alert(`Stok masuk +${amount} butir berhasil disimpan.`);
+            switchTab('dashboard');
+        }
+
+        function handleBarangKeluar(e) {
+            e.preventDefault();
+            if (currentUser.role === 'OWNER') return alert('Pemilik Toko hanya memiliki akses baca (Read-Only).');
+
+            const date = document.getElementById('outTanggal').value;
+            const productId = document.getElementById('outProductSelect').value;
+            const amount = Number(document.getElementById('outJumlah').value);
+            const status = document.getElementById('outStatus').value;
+            const target = document.getElementById('outTujuan').value.trim();
+            const note = document.getElementById('outCatatan').value.trim();
+
+            const product = products.find(p => p.id === productId);
+            if (!product) return alert('Pilih varian telur.');
+
+            if (product.stock < amount) {
+                alert(`Stok fisik tidak mencukupi! Stok saat ini: ${product.stock} butir.`);
+                return;
+            }
+
+            product.stock -= amount;
+            saveProductsToStorage();
+
+            logs.push({
+                id: 'log_' + Date.now(),
+                timestamp: new Date().toISOString(),
+                date,
+                type: 'KELUAR',
+                productId: product.id,
+                sku: product.sku,
+                productName: product.name,
+                amount,
+                sourceOrTarget: target,
+                status: status,
+                note
+            });
+            saveLogsToStorage();
+
+            document.getElementById('formBarangKeluar').reset();
+            setDefaultDates();
+            alert(`Transaksi barang keluar -${amount} butir berhasil disimpan.`);
+            switchTab('dashboard');
+        }
+
+        // Reports & Export
+        function renderReportsTable() {
+            const typeFilter = document.getElementById('reportFilterType').value;
+            const startDate = document.getElementById('reportStartDate').value;
+            const endDate = document.getElementById('reportEndDate').value;
+
+            let filteredLogs = [...logs];
+
+            if (typeFilter) filteredLogs = filteredLogs.filter(l => l.type === typeFilter);
+            if (startDate) filteredLogs = filteredLogs.filter(l => l.date >= startDate);
+            if (endDate) filteredLogs = filteredLogs.filter(l => l.date <= endDate);
+
+            document.getElementById('printDateRange').textContent = `Periode: ${startDate || 'Semua'} s/d ${endDate || 'Semua'}`;
+
+            const tbody = document.getElementById('reportsTableBody');
+            if (filteredLogs.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-slate-400 text-sm">Tidak ada riwayat mutasi transaksi.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = filteredLogs.reverse().map(l => `
+                <tr class="hover:bg-slate-50 transition-colors">
+                    <td class="py-3 px-4 font-mono text-xs text-slate-600">${l.date}</td>
+                    <td class="py-3 px-4">
+                        <span class="px-2 py-0.5 text-[10px] font-bold rounded-full ${l.type === 'MASUK' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}">
+                            ${l.type}
+                        </span>
+                    </td>
+                    <td class="py-3 px-4">
+                        <div class="font-medium text-slate-800">${l.productName}</div>
+                        <div class="text-xs font-mono text-slate-400">${l.sku}</div>
+                    </td>
+                    <td class="py-3 px-4 font-bold ${l.type === 'MASUK' ? 'text-emerald-600' : 'text-rose-600'}">
+                        ${l.type === 'MASUK' ? '+' : '-'}${l.amount} butir
+                    </td>
+                    <td class="py-3 px-4 text-xs text-slate-600">${l.sourceOrTarget}</td>
+                    <td class="py-3 px-4 text-xs text-slate-500">
+                        <span class="font-semibold">${l.status}</span>
+                        ${l.note ? `<br><span class="text-[11px] text-slate-400">${l.note}</span>` : ''}
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // USER MANAGEMENT TABLE (Admin Only)
+        function renderUsersTable() {
+            const tbody = document.getElementById('usersTableBody');
+            if (!tbody) return;
+
+            tbody.innerHTML = Object.keys(accounts).map(key => {
+                const u = accounts[key];
+                return `
+                    <tr class="hover:bg-slate-50">
+                        <td class="py-3 px-4 font-bold font-mono text-xs text-slate-700">${u.username}</td>
+                        <td class="py-3 px-4 font-medium text-slate-800">${u.name}</td>
+                        <td class="py-3 px-4">
+                            <span class="px-2.5 py-1 text-[10px] font-bold rounded-full bg-slate-100 text-slate-700">
+                                ${u.roleLabel}
+                            </span>
+                        </td>
+                        <td class="py-3 px-4 text-xs text-slate-500">${u.email}</td>
+                        <td class="py-3 px-4 text-center">
+                            <button onclick="adminResetPasswordPrompt('${u.username}')" class="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 rounded-lg text-xs font-semibold transition-colors">
+                                <i class="fa-solid fa-key mr-1"></i> Reset Password
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function adminResetPasswordPrompt(username) {
+            if (currentUser.role !== 'ADMIN') return;
+            const newPass = prompt(`Masukkan password baru untuk user "${username}":`, "123456");
+            if (newPass && newPass.trim() !== "") {
+                if (accounts[username]) {
+                    accounts[username].pass = newPass.trim();
+                    saveAccountsData();
+                    alert(`Password untuk "${username}" berhasil diubah menjadi: ${newPass.trim()}`);
+                    renderUsersTable();
+                }
+            }
+        }
+
+        function exportToCSV() {
+            if (logs.length === 0) return alert('Tidak ada data transaksi untuk diekspor.');
+
+            let csv = 'ID,Tanggal,Tipe,SKU,Nama Produk,Jumlah,Sumber/Tujuan,Status,Catatan\n';
+            logs.forEach(l => {
+                csv += `"${l.id}","${l.date}","${l.type}","${l.sku}","${l.productName}","${l.amount}","${l.sourceOrTarget}","${l.status}","${l.note || ''}"\n`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `Laporan_Stok_Telur_Asin_${new Date().toISOString().split('T')[0]}.csv`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
+</body>
+</html>

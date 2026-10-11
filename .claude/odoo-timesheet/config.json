@@ -1,0 +1,13 @@
+{
+  "odoo_url": "",
+  "odoo_db": "",
+  "odoo_user": "",
+  "odoo_password": "",
+  "project_id": null,
+  "employee_id": null,
+  "ai_matching": "claude_code",
+  "auto_create_task": true,
+  "min_duration_seconds": 30,
+  "task_name_prefix": "",
+  "scripts_path": "C:\\Users\\dhima\\.claude\\plugins\\synced\\75371923-9aae-4a2c-8011-db544e06818e_b39d1c8f-fd5a-4ca1-b6a0-8d0c151f182d\\8aa7f383-5797-4441-9884-8400bd58d849~g2\\scripts"
+}
