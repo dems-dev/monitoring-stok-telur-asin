@@ -40,9 +40,9 @@
                         <th class="py-3 px-4 text-right font-bold">Stok</th>
                         <th class="py-3 px-4 text-right font-bold">Min</th>
                         <th class="py-3 px-4 text-left font-bold">Status</th>
-                        @canany(['update', 'delete'], App\Models\Product::class)
+                        @can('manageAny', App\Models\Product::class)
                             <th class="py-3 px-4 text-right font-bold no-print">Aksi</th>
-                        @endcanany
+                        @endcan
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
@@ -65,7 +65,7 @@
                                     <span class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-100 text-emerald-700">AMAN</span>
                                 @endif
                             </td>
-                            @canany(['update', 'delete'], App\Models\Product::class)
+                            @can('manageAny', App\Models\Product::class)
                                 <td class="py-3 px-4 text-right whitespace-nowrap no-print">
                                     @can('update', $product)
                                         <a href="{{ route('products.edit', $product) }}" title="Ubah"
@@ -86,7 +86,7 @@
                                         </form>
                                     @endcan
                                 </td>
-                            @endcanany
+                            @endcan
                         </tr>
                     @empty
                         <tr>

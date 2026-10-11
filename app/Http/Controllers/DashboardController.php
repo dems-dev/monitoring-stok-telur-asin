@@ -34,11 +34,16 @@ class DashboardController extends Controller
             'todayMutation' => $todayMutation,
             'lowStockItems' => $lowStockItems,
             'recentLogs' => $recentLogs,
-            'chartLabels' => $products->pluck('name'),
-            'chartStock' => $products->pluck('stock'),
-            'chartMinStock' => $products->pluck('min_stock'),
-            'categoryLabels' => $byCategory->keys(),
-            'categoryValues' => $byCategory->values(),
+            // Satu array utuh supaya view cukup memanggil @json($chartData)
+            // dalam satu baris; @json([...]) multi-baris menggagalkan
+            // parser direktif Blade.
+            'chartData' => [
+                'labels' => $products->pluck('name'),
+                'stock' => $products->pluck('stock'),
+                'minStock' => $products->pluck('min_stock'),
+                'categoryLabels' => $byCategory->keys(),
+                'categoryValues' => $byCategory->values(),
+            ],
         ]);
     }
 }

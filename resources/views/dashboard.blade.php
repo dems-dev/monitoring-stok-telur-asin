@@ -97,13 +97,7 @@
 @push('scripts')
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script>
-        const chartData = @json([
-            'labels' => $chartLabels,
-            'stock' => $chartStock,
-            'minStock' => $chartMinStock,
-            'categoryLabels' => $categoryLabels,
-            'categoryValues' => $categoryValues,
-        ]);
+        const chartData = @json($chartData);
 
         // Nama panjang dipendekkan agar label sumbu X tetap terbaca.
         const shortLabels = chartData.labels.map(
