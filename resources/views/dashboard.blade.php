@@ -6,9 +6,9 @@
     <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
         <x-stat-card label="Jenis Produk" :value="number_format($totalTypes, 0, ',', '.')" unit="jenis"
                      icon="fa-boxes-stacked" tone="slate" />
-        <x-stat-card label="Total Stok Fisik" :value="number_format($totalStock, 0, ',', '.')" unit="butir"
+        <x-stat-card label="Total Stok Fisik" :value="$totalStockDisplay"
                      icon="fa-egg" tone="amber" />
-        <x-stat-card label="Mutasi Hari Ini" :value="number_format($todayMutation, 0, ',', '.')" unit="butir"
+        <x-stat-card label="Mutasi Hari Ini" :value="number_format($todayMutation, 0, ',', '.')"
                      icon="fa-right-left" tone="emerald" />
         <x-stat-card label="Stok Menipis" :value="number_format($lowStockItems->count(), 0, ',', '.')" unit="varian"
                      icon="fa-triangle-exclamation" tone="rose" />
@@ -23,7 +23,7 @@
             <div class="flex flex-wrap gap-2">
                 @foreach ($lowStockItems as $item)
                     <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold bg-rose-100 text-rose-800 border border-rose-300">
-                        {{ $item->name }}: <b class="ml-1">{{ number_format($item->stock, 0, ',', '.') }} butir</b>
+                        {{ $item->name }}: <b class="ml-1">{{ number_format($item->stock, 0, ',', '.') }} {{ $item->unit?->name ?? 'butir' }}</b>
                         <span class="ml-1 font-normal">(Batas Min: {{ number_format($item->min_stock, 0, ',', '.') }})</span>
                     </span>
                 @endforeach
@@ -80,8 +80,13 @@
                                 ])>{{ $log->type->value }}</span>
                             </td>
                             <td class="py-3 px-4 font-medium text-slate-800">{{ $log->product?->name ?? '-' }}</td>
-                            <td class="py-3 px-4 font-bold text-slate-700">{{ number_format($log->amount, 0, ',', '.') }} butir</td>
-                            <td class="py-3 px-4 text-xs text-slate-500">{{ $log->source_or_target }}</td>
+                            <td class="py-3 px-4 font-bold text-slate-700">
+                                {{ number_format($log->amount, 0, ',', '.') }}
+                                <span class="text-xs font-normal text-slate-500">{{ $log->product?->unit?->name ?? 'butir' }}</span>
+                            </td>
+                            <td class="py-3 px-4 text-xs text-slate-500">
+                                {{ $log->supplier?->name ?? $log->source_or_target }}
+                            </td>
                         </tr>
                     @empty
                         <tr>

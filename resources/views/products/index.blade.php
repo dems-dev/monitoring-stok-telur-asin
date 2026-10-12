@@ -12,8 +12,18 @@
 
             <div class="flex items-center gap-2 no-print">
                 <form method="GET" action="{{ route('products.index') }}" class="flex items-center gap-2">
-                    <input type="search" name="q" value="{{ $search }}" placeholder="Cari nama, SKU, kategori"
-                           class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm w-48 focus:outline-none focus:border-amber-500">
+                    <select name="category_id" onchange="this.form.submit()"
+                            class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-amber-500">
+                        <option value="">Semua Kategori</option>
+                        @foreach ($categories as $cat)
+                            <option value="{{ $cat->id }}" @selected(($selectedCategory ?? null) == $cat->id)>
+                                {{ $cat->name }}
+                            </option>
+                        @endforeach
+                    </select>
+
+                    <input type="search" name="q" value="{{ $search }}" placeholder="Cari nama atau SKU"
+                           class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm w-44 focus:outline-none focus:border-amber-500">
                     <button type="submit" class="p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-xl">
                         <i class="fa-solid fa-magnifying-glass"></i>
                     </button>
@@ -51,15 +61,23 @@
                             <td class="py-3 px-4 font-mono text-xs text-slate-500">{{ $product->sku }}</td>
                             <td class="py-3 px-4 font-medium text-slate-800">{{ $product->name }}</td>
                             <td class="py-3 px-4">
-                                <span class="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-slate-100 text-slate-600">
-                                    {{ $product->category }}
+                                <span class="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-amber-50 text-amber-700 border border-amber-200/60">
+                                    {{ $product->category?->name ?? '-' }}
                                 </span>
                             </td>
                             <td class="py-3 px-4 text-right text-slate-600">Rp {{ number_format($product->price, 0, ',', '.') }}</td>
-                            <td class="py-3 px-4 text-right font-bold text-slate-800">{{ number_format($product->stock, 0, ',', '.') }}</td>
-                            <td class="py-3 px-4 text-right text-xs text-slate-400">{{ number_format($product->min_stock, 0, ',', '.') }}</td>
+                            <td class="py-3 px-4 text-right font-bold text-slate-800">
+                                {{ number_format($product->stock, 0, ',', '.') }}
+                                <span class="text-xs font-normal text-slate-500">{{ $product->unit?->name ?? 'butir' }}</span>
+                            </td>
+                            <td class="py-3 px-4 text-right text-xs text-slate-400">
+                                {{ number_format($product->min_stock, 0, ',', '.') }}
+                                <span class="text-[10px] text-slate-400">{{ $product->unit?->name ?? 'butir' }}</span>
+                            </td>
                             <td class="py-3 px-4">
-                                @if ($product->isLowStock())
+                                @if ($product->stock <= 0)
+                                    <span class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-slate-200 text-slate-700">HABIS</span>
+                                @elseif ($product->isLowStock())
                                     <span class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-rose-100 text-rose-700">MENIPIS</span>
                                 @else
                                     <span class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-100 text-emerald-700">AMAN</span>

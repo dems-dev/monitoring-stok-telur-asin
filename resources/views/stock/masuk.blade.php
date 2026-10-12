@@ -43,19 +43,38 @@
                     <option value="">-- Pilih varian --</option>
                     @foreach ($products as $product)
                         <option value="{{ $product->id }}" @selected(old('product_id') == $product->id)>
-                            {{ $product->sku }} &mdash; {{ $product->name }} (stok {{ number_format($product->stock, 0, ',', '.') }})
+                            {{ $product->sku }} &mdash; {{ $product->name }} (stok {{ number_format($product->stock, 0, ',', '.') }} {{ $product->unit?->name ?? 'butir' }})
                         </option>
                     @endforeach
                 </select>
                 @error('product_id') <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
             </div>
 
-            <div>
-                <label for="source_or_target" class="block text-xs font-semibold text-slate-600 mb-1">Sumber / Asal Barang</label>
-                <input id="source_or_target" name="source_or_target" type="text" required
-                       value="{{ old('source_or_target') }}" placeholder="Dapur Utama Brebes"
-                       class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-emerald-500">
-                @error('source_or_target') <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label for="supplier_id" class="block text-xs font-semibold text-slate-600 mb-1">
+                        Pilih Supplier Terdaftar <span class="text-slate-400 font-normal">(opsional)</span>
+                    </label>
+                    <select id="supplier_id" name="supplier_id"
+                            onchange="if(this.value){ document.getElementById('source_or_target').value = this.options[this.selectedIndex].getAttribute('data-name'); }"
+                            class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-emerald-500">
+                        <option value="">-- Pilih Supplier (Opsional) --</option>
+                        @foreach ($suppliers as $supplier)
+                            <option value="{{ $supplier->id }}" data-name="{{ $supplier->name }}" @selected(old('supplier_id') == $supplier->id)>
+                                {{ $supplier->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                    @error('supplier_id') <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
+                </div>
+
+                <div>
+                    <label for="source_or_target" class="block text-xs font-semibold text-slate-600 mb-1">Sumber / Asal Barang</label>
+                    <input id="source_or_target" name="source_or_target" type="text" required
+                           value="{{ old('source_or_target') }}" placeholder="Dapur Utama Brebes"
+                           class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-emerald-500">
+                    @error('source_or_target') <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
+                </div>
             </div>
 
             <div>

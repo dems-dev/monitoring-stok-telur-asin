@@ -12,20 +12,11 @@ class Product extends Model
 {
     use HasFactory, SoftDeletes;
 
-    /** Kategori bawaan dari prototipe; bebas ditambah lewat form. */
-    public const CATEGORIES = [
-        'Original',
-        'Bakar',
-        'Asap',
-        'Bumbu/Rasa',
-        'Kemasan',
-        'Mentah',
-    ];
-
     protected $fillable = [
         'sku',
         'name',
-        'category',
+        'category_id',
+        'unit_id',
         'price',
         'stock',
         'min_stock',
@@ -34,10 +25,22 @@ class Product extends Model
     protected function casts(): array
     {
         return [
+            'category_id' => 'integer',
+            'unit_id' => 'integer',
             'price' => 'integer',
             'stock' => 'integer',
             'min_stock' => 'integer',
         ];
+    }
+
+    public function category(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Category::class);
+    }
+
+    public function unit(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Unit::class);
     }
 
     public function stockLogs(): HasMany

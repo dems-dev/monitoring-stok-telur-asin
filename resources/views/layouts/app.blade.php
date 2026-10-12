@@ -79,6 +79,17 @@
                         icon="fa-boxes-stacked" label="Master Data Stok"
                         :badge="\App\Models\Product::count()" />
 
+            @if ($role->canManageMasterData())
+                <x-nav-link :href="route('categories.index')" :active="request()->routeIs('categories.*')"
+                            icon="fa-tags" icon-color="text-amber-600" label="Kategori Produk" />
+
+                <x-nav-link :href="route('units.index')" :active="request()->routeIs('units.*')"
+                            icon="fa-scale-balanced" icon-color="text-amber-600" label="Satuan (Units)" />
+
+                <x-nav-link :href="route('suppliers.index')" :active="request()->routeIs('suppliers.*')"
+                            icon="fa-truck-field" icon-color="text-amber-600" label="Supplier / Mitra" />
+            @endif
+
             @if ($role->canRecordMutation())
                 <x-nav-link :href="route('stock.masuk.create')" :active="request()->routeIs('stock.masuk.*')"
                             icon="fa-file-circle-plus" icon-color="text-emerald-600" label="Barang Masuk" />

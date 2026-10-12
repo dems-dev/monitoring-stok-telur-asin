@@ -1,10 +1,13 @@
 <?php
 
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\StockMovementController;
+use App\Http\Controllers\SupplierController;
+use App\Http\Controllers\UnitController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -22,6 +25,13 @@ Route::middleware('auth')->group(function (): void {
 
     // Master produk: otorisasi per aksi diatur di ProductController.
     Route::resource('products', ProductController::class)->except('show');
+
+    // Master data kategori, satuan, dan supplier (khusus ADMIN).
+    Route::middleware('role:ADMIN')->group(function (): void {
+        Route::resource('categories', CategoryController::class)->except('show');
+        Route::resource('units', UnitController::class)->except('show');
+        Route::resource('suppliers', SupplierController::class)->except('show');
+    });
 
     // Pencatatan mutasi tertutup bagi OWNER yang hanya punya akses baca.
     Route::middleware('role:ADMIN,PETUGAS')->group(function (): void {

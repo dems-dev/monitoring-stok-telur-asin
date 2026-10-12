@@ -38,14 +38,16 @@ class RolePermissionTest extends TestCase
     public function test_petugas_tidak_bisa_mengelola_master_produk(): void
     {
         $petugas = User::factory()->create();
+        $category = \App\Models\Category::factory()->create();
+        $unit = \App\Models\Unit::factory()->create();
 
         $this->actingAs($petugas)->get('/products/create')->assertForbidden();
         $this->actingAs($petugas)->post('/products', [
             'sku' => 'TLR-BARU-01',
             'name' => 'Telur Asin Baru',
-            'category' => 'Original',
+            'category_id' => $category->id,
+            'unit_id' => $unit->id,
             'price' => 3500,
-            'stock' => 10,
             'min_stock' => 5,
         ])->assertForbidden();
     }
@@ -73,17 +75,19 @@ class RolePermissionTest extends TestCase
     public function test_admin_bisa_menambah_produk(): void
     {
         $admin = User::factory()->admin()->create();
+        $category = \App\Models\Category::factory()->create();
+        $unit = \App\Models\Unit::factory()->create();
 
         $this->actingAs($admin)->post('/products', [
             'sku' => 'TLR-BARU-01',
             'name' => 'Telur Asin Baru',
-            'category' => 'Original',
+            'category_id' => $category->id,
+            'unit_id' => $unit->id,
             'price' => 3500,
-            'stock' => 10,
             'min_stock' => 5,
         ])->assertRedirect(route('products.index'));
 
-        $this->assertDatabaseHas('products', ['sku' => 'TLR-BARU-01']);
+        $this->assertDatabaseHas('products', ['sku' => 'TLR-BARU-01', 'stock' => 0]);
     }
 
     public function test_admin_tidak_bisa_menghapus_akun_sendiri(): void

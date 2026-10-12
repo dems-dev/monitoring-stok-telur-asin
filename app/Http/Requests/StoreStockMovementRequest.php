@@ -28,6 +28,13 @@ class StoreStockMovementRequest extends FormRequest
     {
         if ($this->movementType() === LogType::MASUK) {
             $this->merge(['status' => 'Selesai']);
+
+            if ($this->filled('supplier_id') && blank($this->input('source_or_target'))) {
+                $supplierName = \App\Models\Supplier::find($this->input('supplier_id'))?->name;
+                if ($supplierName) {
+                    $this->merge(['source_or_target' => $supplierName]);
+                }
+            }
         }
     }
 
@@ -36,6 +43,7 @@ class StoreStockMovementRequest extends FormRequest
         return [
             'logged_date' => ['required', 'date', 'before_or_equal:today'],
             'product_id' => ['required', 'integer', 'exists:products,id'],
+            'supplier_id' => ['nullable', 'integer', 'exists:suppliers,id'],
             'amount' => ['required', 'integer', 'min:1', 'max:1000000'],
             'source_or_target' => ['required', 'string', 'max:255'],
             'status' => ['required', Rule::in($this->movementType()->allowedStatuses())],

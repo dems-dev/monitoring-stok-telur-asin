@@ -2,7 +2,9 @@
 
 namespace Database\Factories;
 
+use App\Models\Category;
 use App\Models\Product;
+use App\Models\Unit;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -15,7 +17,8 @@ class ProductFactory extends Factory
         return [
             'sku' => 'TLR-'.fake()->unique()->numerify('####'),
             'name' => 'Telur Asin '.fake()->word(),
-            'category' => fake()->randomElement(Product::CATEGORIES),
+            'category_id' => Category::factory(),
+            'unit_id' => Unit::factory(),
             'price' => fake()->numberBetween(3000, 25000),
             'stock' => fake()->numberBetween(0, 500),
             'min_stock' => fake()->numberBetween(10, 100),

@@ -17,6 +17,7 @@ class StockMovementController extends Controller
     {
         return view('stock.masuk', [
             'products' => $this->selectableProducts(),
+            'suppliers' => \App\Models\Supplier::orderBy('name')->get(),
         ]);
     }
 
@@ -34,7 +35,7 @@ class StockMovementController extends Controller
 
         return redirect()
             ->route('dashboard')
-            ->with('status', "Stok masuk +{$amount} butir berhasil disimpan.");
+            ->with('status', "Stok masuk +{$amount} berhasil disimpan.");
     }
 
     public function storeKeluar(StoreStockMovementRequest $request): RedirectResponse
@@ -43,7 +44,7 @@ class StockMovementController extends Controller
 
         return redirect()
             ->route('dashboard')
-            ->with('status', "Transaksi barang keluar -{$amount} butir berhasil disimpan.");
+            ->with('status', "Transaksi barang keluar -{$amount} berhasil disimpan.");
     }
 
     /**
@@ -57,12 +58,13 @@ class StockMovementController extends Controller
         $data = $request->validated();
 
         return DB::transaction(function () use ($data, $type, $request): int {
-            $product = Product::whereKey($data['product_id'])->lockForUpdate()->firstOrFail();
+            $product = Product::with('unit')->whereKey($data['product_id'])->lockForUpdate()->firstOrFail();
             $amount = (int) $data['amount'];
 
             if ($type === LogType::KELUAR && $product->stock < $amount) {
+                $unitName = $product->unit?->name ?? 'butir';
                 throw ValidationException::withMessages([
-                    'amount' => "Stok fisik tidak mencukupi. Stok {$product->name} saat ini {$product->stock} butir.",
+                    'amount' => "Stok fisik tidak mencukupi. Stok {$product->name} saat ini {$product->stock} {$unitName}.",
                 ]);
             }
 
@@ -73,6 +75,7 @@ class StockMovementController extends Controller
                 'type' => $type,
                 'product_id' => $product->id,
                 'user_id' => $request->user()->id,
+                'supplier_id' => $data['supplier_id'] ?? null,
                 'amount' => $amount,
                 'source_or_target' => $data['source_or_target'],
                 'status' => $data['status'],
@@ -86,6 +89,6 @@ class StockMovementController extends Controller
 
     private function selectableProducts()
     {
-        return Product::orderBy('name')->get(['id', 'sku', 'name', 'stock']);
+        return Product::with('unit')->orderBy('name')->get(['id', 'sku', 'name', 'stock', 'unit_id']);
     }
 }

@@ -15,6 +15,7 @@ class StockLog extends Model
         'type',
         'product_id',
         'user_id',
+        'supplier_id',
         'amount',
         'source_or_target',
         'status',
@@ -40,5 +41,10 @@ class StockLog extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function supplier(): BelongsTo
+    {
+        return $this->belongsTo(Supplier::class);
     }
 }

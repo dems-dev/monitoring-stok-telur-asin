@@ -17,9 +17,9 @@ class ProductRequest extends FormRequest
                 Rule::unique('products', 'sku')->ignore($productId)->withoutTrashed(),
             ],
             'name' => ['required', 'string', 'max:255'],
-            'category' => ['required', 'string', 'max:50'],
+            'category_id' => ['required', 'integer', 'exists:categories,id'],
+            'unit_id' => ['required', 'integer', 'exists:units,id'],
             'price' => ['required', 'integer', 'min:0', 'max:100000000'],
-            'stock' => ['required', 'integer', 'min:0'],
             'min_stock' => ['required', 'integer', 'min:0'],
         ];
     }
@@ -29,9 +29,9 @@ class ProductRequest extends FormRequest
         return [
             'sku' => 'SKU',
             'name' => 'Nama produk',
-            'category' => 'Kategori',
+            'category_id' => 'Kategori',
+            'unit_id' => 'Satuan',
             'price' => 'Harga',
-            'stock' => 'Stok',
             'min_stock' => 'Batas minimum',
         ];
     }
@@ -40,6 +40,8 @@ class ProductRequest extends FormRequest
     {
         return [
             'sku.unique' => 'SKU ini sudah dipakai produk lain.',
+            'price.min' => 'Harga tidak boleh negatif.',
+            'min_stock.min' => 'Batas minimum stok tidak boleh negatif.',
         ];
     }
 }

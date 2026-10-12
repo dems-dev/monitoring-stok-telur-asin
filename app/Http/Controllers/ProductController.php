@@ -29,20 +29,24 @@ class ProductController extends Controller implements HasMiddleware
     public function index(Request $request): View
     {
         $search = trim((string) $request->query('q', ''));
+        $categoryId = $request->query('category_id');
 
-        $products = Product::query()
+        $products = Product::with(['category', 'unit'])
             ->when($search !== '', fn ($query) => $query->where(
                 fn ($q) => $q->where('name', 'like', "%{$search}%")
                     ->orWhere('sku', 'like', "%{$search}%")
-                    ->orWhere('category', 'like', "%{$search}%")
+                    ->orWhereHas('category', fn ($c) => $c->where('name', 'like', "%{$search}%"))
             ))
+            ->when($categoryId, fn ($query) => $query->where('category_id', $categoryId))
             ->orderBy('name')
             ->paginate(15)
             ->withQueryString();
 
         return view('products.index', [
             'products' => $products,
+            'categories' => \App\Models\Category::orderBy('name')->get(),
             'search' => $search,
+            'selectedCategory' => $categoryId,
         ]);
     }
 
@@ -50,24 +54,29 @@ class ProductController extends Controller implements HasMiddleware
     {
         return view('products.form', [
             'product' => new Product(),
-            'categories' => Product::CATEGORIES,
+            'categories' => \App\Models\Category::orderBy('name')->get(),
+            'units' => \App\Models\Unit::orderBy('name')->get(),
         ]);
     }
 
     public function store(ProductRequest $request): RedirectResponse
     {
-        $product = Product::create($request->validated());
+        $data = $request->validated();
+        $data['stock'] = 0;
+
+        $product = Product::create($data);
 
         return redirect()
             ->route('products.index')
-            ->with('status', "Produk {$product->name} berhasil ditambahkan.");
+            ->with('status', "Produk {$product->name} berhasil ditambahkan. Stok awal dapat diisi via menu Barang Masuk.");
     }
 
     public function edit(Product $product): View
     {
         return view('products.form', [
             'product' => $product,
-            'categories' => Product::CATEGORIES,
+            'categories' => \App\Models\Category::orderBy('name')->get(),
+            'units' => \App\Models\Unit::orderBy('name')->get(),
         ]);
     }
 
