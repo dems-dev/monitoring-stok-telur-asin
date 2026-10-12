@@ -1,4 +1,8 @@
 import './bootstrap';
+import Alpine from 'alpinejs';
+
+window.Alpine = Alpine;
+Alpine.start();
 
 /**
  * Konfirmasi untuk aksi yang menghapus data: form cukup diberi

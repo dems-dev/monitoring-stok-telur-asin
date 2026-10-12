@@ -57,4 +57,9 @@ Route::middleware('auth')->group(function (): void {
 
     // Manajemen pengguna: dibatasi ADMIN di UserController.
     Route::resource('users', UserController::class)->except('show');
+
+    // AI Chatbot Persediaan (Hanya-Baca)
+    Route::post('/chatbot/message', [\App\Http\Controllers\ChatbotController::class, 'sendMessage'])->name('chatbot.message');
+    Route::get('/chatbot/history', [\App\Http\Controllers\ChatbotController::class, 'history'])->name('chatbot.history');
+    Route::delete('/chatbot/history', [\App\Http\Controllers\ChatbotController::class, 'clearHistory'])->name('chatbot.clear');
 });
