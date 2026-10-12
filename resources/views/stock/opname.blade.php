@@ -5,7 +5,7 @@
 @section('content')
     <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm card-shadow max-w-2xl">
         <div class="px-5 py-4 border-b border-slate-100 flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-lg">
+            <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-lg">
                 <i class="fa-solid fa-clipboard-check"></i>
             </div>
             <div>
@@ -22,14 +22,14 @@
                 <input id="logged_date" name="logged_date" type="date" required
                        max="{{ now()->toDateString() }}"
                        value="{{ old('logged_date', now()->toDateString()) }}"
-                       class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-blue-500">
+                       class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-amber-500">
                 @error('logged_date') <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
             </div>
 
             <div>
                 <label for="product_id" class="block text-xs font-semibold text-slate-600 mb-1">Pilih Varian Telur</label>
                 <select id="product_id" name="product_id" required onchange="updateStockCalculation()"
-                        class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-blue-500">
+                        class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-amber-500">
                     <option value="" data-stock="0" data-unit="butir">-- Pilih varian untuk dihitung --</option>
                     @foreach ($products as $product)
                         <option value="{{ $product->id }}"
@@ -61,7 +61,7 @@
                         <div class="relative">
                             <input id="stok_fisik" name="stok_fisik" type="number" min="0" step="1" required
                                    value="{{ old('stok_fisik') }}" placeholder="0" oninput="updateStockCalculation()"
-                                   class="w-full px-3.5 py-2 bg-white border border-slate-300 rounded-xl text-sm font-bold text-slate-800 focus:outline-none focus:border-blue-500">
+                                   class="w-full px-3.5 py-2 bg-white border border-slate-300 rounded-xl text-sm font-bold text-slate-800 focus:outline-none focus:border-amber-500">
                         </div>
                         @error('stok_fisik') <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
                     </div>
@@ -82,19 +82,20 @@
                 </label>
                 <textarea id="alasan" name="alasan" rows="3" required
                           placeholder="Jelaskan alasan selisih stok (misal: 'Ditemukan 2 butir retak saat pemeriksaan berkala' atau 'Hasil penghitungan fisik opname bulanan sesuai')."
-                          class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-blue-500">{{ old('alasan') }}</textarea>
+                          class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-amber-500">{{ old('alasan') }}</textarea>
                 @error('alasan') <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
             </div>
 
-            <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-3">
-                <a href="{{ route('dashboard') }}"
-                   class="px-4 py-2 border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-bold rounded-xl transition-colors">
+            <div class="flex items-center gap-3 pt-3 border-t border-slate-100">
+                <button type="submit"
+                        style="background-color: #f59e0b; color: #ffffff;"
+                        class="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold rounded-xl shadow-md transition-colors flex items-center gap-2">
+                    <i class="fa-solid fa-check"></i>
+                    <span>Simpan Penyesuaian</span>
+                </button>
+                <a href="{{ route('dashboard') }}" class="text-sm font-semibold text-slate-500 hover:text-slate-700">
                     Batal
                 </a>
-                <button type="submit"
-                        class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition-colors shadow-sm">
-                    <i class="fa-solid fa-check mr-1.5"></i> Simpan Penyesuaian
-                </button>
             </div>
         </form>
     </div>
