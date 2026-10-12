@@ -15,7 +15,7 @@
    ])>
     <span class="flex items-center space-x-3">
         <i class="fa-solid {{ $icon }} w-5 text-center text-lg {{ $active ? 'text-amber-600' : ($iconColor ?? '') }}"></i>
-        <span>{!! $label !!}</span>
+        <span>{{ $label }}</span>
     </span>
 
     @if (! is_null($badge))
