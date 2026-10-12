@@ -25,7 +25,7 @@ class UserFactory extends Factory
     public function definition(): array
     {
         return [
-            'username' => fake()->unique()->userName(),
+            'username' => str_replace('.', '_', fake()->unique()->userName()),
             'name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
             'role' => Role::PETUGAS,

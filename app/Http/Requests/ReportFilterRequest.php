@@ -12,6 +12,8 @@ class ReportFilterRequest extends FormRequest
     {
         return [
             'type' => ['nullable', Rule::enum(LogType::class)],
+            'product_id' => ['nullable', 'exists:products,id'],
+            'user_id' => ['nullable', 'exists:users,id'],
             'start_date' => ['nullable', 'date'],
             'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
         ];
@@ -21,6 +23,8 @@ class ReportFilterRequest extends FormRequest
     {
         return [
             'type' => 'Jenis mutasi',
+            'product_id' => 'Produk',
+            'user_id' => 'Petugas pencatat',
             'start_date' => 'Tanggal mulai',
             'end_date' => 'Tanggal akhir',
         ];

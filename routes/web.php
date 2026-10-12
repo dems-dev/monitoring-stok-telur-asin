@@ -47,6 +47,13 @@ Route::middleware('auth')->group(function (): void {
 
     Route::get('/laporan', [ReportController::class, 'index'])->name('reports.index');
     Route::get('/laporan/export', [ReportController::class, 'export'])->name('reports.export');
+    Route::get('/laporan/export/csv', [ReportController::class, 'exportCsv'])->name('reports.export.csv');
+    Route::get('/laporan/export/pdf', [ReportController::class, 'exportPdf'])->name('reports.export.pdf');
+    Route::get('/laporan/export/excel', [ReportController::class, 'exportExcel'])->name('reports.export.excel');
+
+    Route::get('/laporan/kartu-stok', [ReportController::class, 'stockCard'])->name('reports.stock_card');
+    Route::get('/laporan/kartu-stok/pdf', [ReportController::class, 'exportStockCardPdf'])->name('reports.stock_card.pdf');
+    Route::get('/laporan/kartu-stok/excel', [ReportController::class, 'exportStockCardExcel'])->name('reports.stock_card.excel');
 
     // Manajemen pengguna: dibatasi ADMIN di UserController.
     Route::resource('users', UserController::class)->except('show');
