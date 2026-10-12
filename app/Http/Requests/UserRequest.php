@@ -25,6 +25,7 @@ class UserRequest extends FormRequest
                 Rule::unique('users', 'email')->ignore($userId),
             ],
             'role' => ['required', Rule::enum(Role::class)],
+            'is_active' => ['sometimes', 'boolean'],
             // Saat memperbarui, password kosong berarti biarkan yang lama.
             'password' => [$isUpdate ? 'nullable' : 'required', 'confirmed', Password::min(8)],
         ];
@@ -37,6 +38,7 @@ class UserRequest extends FormRequest
             'name' => 'Nama lengkap',
             'email' => 'Email',
             'role' => 'Peran',
+            'is_active' => 'Status aktif',
             'password' => 'Password',
         ];
     }

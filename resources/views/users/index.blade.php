@@ -25,6 +25,7 @@
                         <th class="py-3 px-4 text-left font-bold">Nama Lengkap</th>
                         <th class="py-3 px-4 text-left font-bold">Email</th>
                         <th class="py-3 px-4 text-left font-bold">Peran</th>
+                        <th class="py-3 px-4 text-center font-bold">Status</th>
                         <th class="py-3 px-4 text-right font-bold">Aksi</th>
                     </tr>
                 </thead>
@@ -46,6 +47,17 @@
                                     </span>
                                     <span class="text-xs font-semibold text-slate-600">{{ $user->role->label() }}</span>
                                 </span>
+                            </td>
+                            <td class="py-3 px-4 text-center">
+                                @if ($user->is_active)
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                        Aktif
+                                    </span>
+                                @else
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200">
+                                        Nonaktif
+                                    </span>
+                                @endif
                             </td>
                             <td class="py-3 px-4 text-right whitespace-nowrap">
                                 <a href="{{ route('users.edit', $user) }}" title="Ubah"

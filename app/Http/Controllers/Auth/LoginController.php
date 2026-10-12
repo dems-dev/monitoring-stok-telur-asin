@@ -49,6 +49,16 @@ class LoginController extends Controller
             ]);
         }
 
+        if (! Auth::user()->is_active) {
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            throw ValidationException::withMessages([
+                'username' => 'Akun Anda dinonaktifkan. Hubungi admin.',
+            ]);
+        }
+
         RateLimiter::clear($throttleKey);
         $request->session()->regenerate();
 

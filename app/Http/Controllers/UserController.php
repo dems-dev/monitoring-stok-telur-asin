@@ -34,7 +34,10 @@ class UserController extends Controller implements HasMiddleware
 
     public function store(UserRequest $request): RedirectResponse
     {
-        User::create($request->validated());
+        $data = $request->validated();
+        $data['is_active'] = $request->boolean('is_active', true);
+
+        User::create($data);
 
         return redirect()
             ->route('users.index')
@@ -57,6 +60,21 @@ class UserController extends Controller implements HasMiddleware
         if (blank($data['password'] ?? null)) {
             unset($data['password']);
         }
+
+        $isActive = $request->boolean('is_active', true);
+
+        // Admin tidak boleh mengubah peran atau menonaktifkan akun dirinya sendiri.
+        if ($user->is($request->user())) {
+            $data['role'] = $user->role->value;
+            $isActive = true;
+        }
+
+        // Jangan izinkan menonaktifkan admin terakhir yang masih aktif.
+        if ($user->isAdmin() && ! $isActive && User::where('role', Role::ADMIN)->where('is_active', true)->where('id', '!=', $user->id)->count() === 0) {
+            return back()->withErrors(['is_active' => 'Sistem harus menyisakan minimal satu akun admin yang aktif.']);
+        }
+
+        $data['is_active'] = $isActive;
 
         $user->update($data);
 

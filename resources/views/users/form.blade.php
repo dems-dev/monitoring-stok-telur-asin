@@ -33,7 +33,8 @@
                 <div>
                     <label for="role" class="block text-xs font-semibold text-slate-600 mb-1">Peran</label>
                     <select id="role" name="role" required
-                            class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500">
+                            {{ $user->exists && $user->is(auth()->user()) ? 'disabled' : '' }}
+                            class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500 disabled:opacity-60 disabled:cursor-not-allowed">
                         @foreach ($roles as $role)
                             <option value="{{ $role->value }}"
                                 @selected(old('role', $user->role?->value) === $role->value)>
@@ -41,6 +42,11 @@
                             </option>
                         @endforeach
                     </select>
+                    {{-- Disabled select tidak dikirim browser; kirim value via hidden input. --}}
+                    @if ($user->exists && $user->is(auth()->user()))
+                        <input type="hidden" name="role" value="{{ $user->role->value }}">
+                        <p class="mt-1 text-[10px] text-amber-600 font-medium">Anda tidak bisa mengubah peran akun sendiri.</p>
+                    @endif
                     @error('role') <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
                 </div>
             </div>
@@ -78,6 +84,23 @@
                            {{ $user->exists ? '' : 'required' }} placeholder="Ulangi password"
                            class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500">
                 </div>
+            </div>
+
+            <div class="pt-2 border-t border-slate-100">
+                <label class="flex items-center gap-2 text-xs font-semibold text-slate-700 select-none">
+                    <input type="checkbox" name="is_active" value="1"
+                           @checked(old('is_active', $user->exists ? $user->is_active : true))
+                           {{ $user->exists && $user->is(auth()->user()) ? 'disabled' : '' }}
+                           class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 disabled:opacity-60">
+                    Status Akun Aktif
+                </label>
+                @if ($user->exists && $user->is(auth()->user()))
+                    <input type="hidden" name="is_active" value="1">
+                    <p class="mt-1 text-[10px] text-amber-600 font-medium">Anda tidak bisa menonaktifkan akun sendiri.</p>
+                @else
+                    <p class="mt-0.5 text-[11px] text-slate-400">Akun yang dinonaktifkan tidak dapat masuk ke dalam sistem.</p>
+                @endif
+                @error('is_active') <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
             </div>
 
             <div class="flex items-center gap-3 pt-2">

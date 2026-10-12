@@ -85,4 +85,68 @@ class RolePermissionTest extends TestCase
 
         $this->assertDatabaseHas('products', ['sku' => 'TLR-BARU-01']);
     }
+
+    public function test_admin_tidak_bisa_menghapus_akun_sendiri(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        $response = $this->actingAs($admin)->delete("/users/{$admin->id}");
+
+        $response->assertSessionHasErrors('user');
+        $this->assertDatabaseHas('users', ['id' => $admin->id]);
+    }
+
+    public function test_admin_tidak_bisa_menonaktifkan_akun_sendiri(): void
+    {
+        $admin = User::factory()->admin()->create(['is_active' => true]);
+
+        $this->actingAs($admin)->put("/users/{$admin->id}", [
+            'username' => $admin->username,
+            'name' => $admin->name,
+            'email' => $admin->email,
+            'role' => $admin->role->value,
+            'is_active' => false,
+        ]);
+
+        $this->assertTrue($admin->fresh()->is_active);
+    }
+
+    public function test_admin_tidak_bisa_mengubah_peran_akun_sendiri(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        $this->actingAs($admin)->put("/users/{$admin->id}", [
+            'username' => $admin->username,
+            'name' => $admin->name,
+            'email' => $admin->email,
+            'role' => 'PETUGAS',
+        ]);
+
+        $this->assertSame(\App\Enums\Role::ADMIN, $admin->fresh()->role);
+    }
+
+    public function test_admin_bisa_mengubah_password_user_lain(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $petugas = User::factory()->create([
+            'username' => 'petugas_lama',
+            'password' => 'passwordlama123',
+        ]);
+
+        $this->actingAs($admin)->put("/users/{$petugas->id}", [
+            'username' => $petugas->username,
+            'name' => $petugas->name,
+            'email' => $petugas->email,
+            'role' => $petugas->role->value,
+            'password' => 'passwordbaru123',
+            'password_confirmation' => 'passwordbaru123',
+        ])->assertRedirect(route('users.index'));
+
+        $this->post('/logout');
+
+        $this->post('/login', [
+            'username' => 'petugas_lama',
+            'password' => 'passwordbaru123',
+        ])->assertRedirect(route('dashboard'));
+    }
 }

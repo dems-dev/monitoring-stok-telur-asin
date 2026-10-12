@@ -57,6 +57,10 @@
             </button>
         </form>
 
+        <p class="mt-4 text-center text-xs text-slate-500">
+            Lupa password? <span class="font-semibold text-slate-700">Hubungi admin</span> untuk reset.
+        </p>
+
         @if (app()->environment('local'))
             {{-- Petunjuk akun contoh hanya tampil di lingkungan lokal. --}}
             <div class="mt-6 pt-5 border-t border-slate-100">
