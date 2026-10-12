@@ -98,7 +98,7 @@
             @endif
 
             <x-nav-link :href="route('reports.index')" :active="request()->routeIs('reports.*')"
-                        icon="fa-clock-rotate-left" icon-color="text-amber-600" label="Riwayat &amp; Laporan" />
+                        icon="fa-clock-rotate-left" icon-color="text-amber-600" label="Riwayat & Laporan" />
 
             @if ($role->canManageMasterData())
                 <x-nav-link :href="route('users.index')" :active="request()->routeIs('users.*')"

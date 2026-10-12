@@ -287,7 +287,10 @@
         });
 
         // 3. Grafik 5 Produk Terlaris Bulan Ini (Horizontal Bar)
-        const topLabels = chartsData.top.labels.length > 0 ? chartsData.top.labels : ['Belum ada penjualan'];
+        // Nama dipendekkan seperti grafik stok agar label sumbu-Y tidak terpotong di kartu sempit.
+        const topLabels = chartsData.top.labels.length > 0
+            ? chartsData.top.labels.map(name => name.length > 16 ? name.slice(0, 16) + '...' : name)
+            : ['Belum ada penjualan'];
         const topValues = chartsData.top.values.length > 0 ? chartsData.top.values : [0];
 
         new Chart(document.getElementById('topProductsChart'), {
