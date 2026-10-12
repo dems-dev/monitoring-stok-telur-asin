@@ -4,7 +4,7 @@
 
 @section('content')
     <!-- Kartu Statistik Utama -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 {{ $canViewInventoryValue ? 'xl:grid-cols-6' : 'xl:grid-cols-5' }} gap-4 mb-6">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
         <x-stat-card label="Varian Produk" :value="number_format($totalTypes, 0, ',', '.')" unit="varian"
                      icon="fa-boxes-stacked" tone="slate" />
 
