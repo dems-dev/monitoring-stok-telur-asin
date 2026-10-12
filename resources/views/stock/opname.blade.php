@@ -86,16 +86,17 @@
                 @error('alasan') <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
             </div>
 
-            <div class="flex items-center gap-3 pt-3 border-t border-slate-100">
+            <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-3">
+                <a href="{{ route('dashboard') }}"
+                   class="px-4 py-2 border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-bold rounded-xl transition-colors">
+                    Batal
+                </a>
                 <button type="submit"
                         style="background-color: #f59e0b; color: #ffffff;"
-                        class="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold rounded-xl shadow-md transition-colors flex items-center gap-2">
+                        class="px-5 py-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-xl shadow-md transition-colors flex items-center gap-1.5">
                     <i class="fa-solid fa-check"></i>
                     <span>Simpan Penyesuaian</span>
                 </button>
-                <a href="{{ route('dashboard') }}" class="text-sm font-semibold text-slate-500 hover:text-slate-700">
-                    Batal
-                </a>
             </div>
         </form>
     </div>
