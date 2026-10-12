@@ -20,7 +20,9 @@ class ProductRequest extends FormRequest
             'category_id' => ['required', 'integer', 'exists:categories,id'],
             'unit_id' => ['required', 'integer', 'exists:units,id'],
             'price' => ['required', 'integer', 'min:0', 'max:100000000'],
+            'purchase_price' => ['nullable', 'integer', 'min:0', 'max:100000000'],
             'min_stock' => ['required', 'integer', 'min:0'],
+            'nearest_expiry_date' => ['nullable', 'date'],
         ];
     }
 
@@ -31,8 +33,10 @@ class ProductRequest extends FormRequest
             'name' => 'Nama produk',
             'category_id' => 'Kategori',
             'unit_id' => 'Satuan',
-            'price' => 'Harga',
+            'price' => 'Harga Jual',
+            'purchase_price' => 'Harga Beli (Modal)',
             'min_stock' => 'Batas minimum',
+            'nearest_expiry_date' => 'Tanggal Kedaluwarsa Terdekat',
         ];
     }
 
@@ -40,7 +44,8 @@ class ProductRequest extends FormRequest
     {
         return [
             'sku.unique' => 'SKU ini sudah dipakai produk lain.',
-            'price.min' => 'Harga tidak boleh negatif.',
+            'price.min' => 'Harga jual tidak boleh negatif.',
+            'purchase_price.min' => 'Harga beli tidak boleh negatif.',
             'min_stock.min' => 'Batas minimum stok tidak boleh negatif.',
         ];
     }

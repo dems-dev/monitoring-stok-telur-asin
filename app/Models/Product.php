@@ -18,8 +18,10 @@ class Product extends Model
         'category_id',
         'unit_id',
         'price',
+        'purchase_price',
         'stock',
         'min_stock',
+        'nearest_expiry_date',
     ];
 
     protected function casts(): array
@@ -28,8 +30,10 @@ class Product extends Model
             'category_id' => 'integer',
             'unit_id' => 'integer',
             'price' => 'integer',
+            'purchase_price' => 'integer',
             'stock' => 'integer',
             'min_stock' => 'integer',
+            'nearest_expiry_date' => 'date',
         ];
     }
 
@@ -57,5 +61,23 @@ class Product extends Model
     public function scopeLowStock(Builder $query): Builder
     {
         return $query->whereColumn('stock', '<=', 'min_stock');
+    }
+
+    /** Mendekati kedaluwarsa (<= $days hari atau sudah lewat). */
+    public function isExpiringSoon(int $days = 3): bool
+    {
+        return $this->nearest_expiry_date !== null && $this->nearest_expiry_date <= today()->addDays($days);
+    }
+
+    public function scopeExpiringSoon(Builder $query, int $days = 3): Builder
+    {
+        return $query->whereNotNull('nearest_expiry_date')
+            ->where('nearest_expiry_date', '<=', today()->addDays($days));
+    }
+
+    /** Nilai harga beli riil atau perkiraan rasio jika belum ditentukan. */
+    public function getEffectivePurchasePriceAttribute(): int
+    {
+        return $this->purchase_price > 0 ? $this->purchase_price : (int) round($this->price * 0.8);
     }
 }

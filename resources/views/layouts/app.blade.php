@@ -16,7 +16,6 @@
 @php
     $user = auth()->user();
     $role = $user->role;
-    $lowStockCount = \App\Models\Product::lowStock()->count();
 @endphp
 
 <header class="bg-white border-b border-slate-200 sticky top-0 z-30 no-print">

@@ -51,12 +51,12 @@ class DatabaseSeeder extends Seeder
         ]);
 
         $products = collect([
-            ['sku' => 'TLR-ORIG-01', 'name' => 'Telur Asin Original Rebus', 'category_id' => $categories['Original']->id, 'unit_id' => $units['butir']->id, 'price' => 3500, 'stock' => 450, 'min_stock' => 100],
-            ['sku' => 'TLR-BAKAR-02', 'name' => 'Telur Asin Bakar Rempah', 'category_id' => $categories['Bakar']->id, 'unit_id' => $units['butir']->id, 'price' => 4000, 'stock' => 35, 'min_stock' => 50],
-            ['sku' => 'TLR-ASAP-03', 'name' => 'Telur Asin Asap Premium', 'category_id' => $categories['Asap']->id, 'unit_id' => $units['butir']->id, 'price' => 4500, 'stock' => 120, 'min_stock' => 40],
-            ['sku' => 'TLR-MASIR-04', 'name' => 'Telur Asin Bumbu Masir Super', 'category_id' => $categories['Bumbu/Rasa']->id, 'unit_id' => $units['butir']->id, 'price' => 4200, 'stock' => 12, 'min_stock' => 30],
-            ['sku' => 'TLR-PAKET-06', 'name' => 'Telur Asin Pack Isi 6', 'category_id' => $categories['Kemasan']->id, 'unit_id' => $units['pack']->id, 'price' => 22000, 'stock' => 80, 'min_stock' => 25],
-            ['sku' => 'TLR-MNTH-05', 'name' => 'Telur Mentah Salted Batch A', 'category_id' => $categories['Mentah']->id, 'unit_id' => $units['butir']->id, 'price' => 3000, 'stock' => 280, 'min_stock' => 80],
+            ['sku' => 'TLR-ORIG-01', 'name' => 'Telur Asin Original Rebus', 'category_id' => $categories['Original']->id, 'unit_id' => $units['butir']->id, 'price' => 3500, 'purchase_price' => 2800, 'stock' => 450, 'min_stock' => 100, 'nearest_expiry_date' => Carbon::today()->addDays(14)],
+            ['sku' => 'TLR-BAKAR-02', 'name' => 'Telur Asin Bakar Rempah', 'category_id' => $categories['Bakar']->id, 'unit_id' => $units['butir']->id, 'price' => 4000, 'purchase_price' => 3200, 'stock' => 35, 'min_stock' => 50, 'nearest_expiry_date' => Carbon::today()->addDays(7)],
+            ['sku' => 'TLR-ASAP-03', 'name' => 'Telur Asin Asap Premium', 'category_id' => $categories['Asap']->id, 'unit_id' => $units['butir']->id, 'price' => 4500, 'purchase_price' => 3600, 'stock' => 120, 'min_stock' => 40, 'nearest_expiry_date' => Carbon::today()->addDays(10)],
+            ['sku' => 'TLR-MASIR-04', 'name' => 'Telur Asin Bumbu Masir Super', 'category_id' => $categories['Bumbu/Rasa']->id, 'unit_id' => $units['butir']->id, 'price' => 4200, 'purchase_price' => 3300, 'stock' => 12, 'min_stock' => 30, 'nearest_expiry_date' => Carbon::today()->addDays(2)],
+            ['sku' => 'TLR-PAKET-06', 'name' => 'Telur Asin Pack Isi 6', 'category_id' => $categories['Kemasan']->id, 'unit_id' => $units['pack']->id, 'price' => 22000, 'purchase_price' => 17500, 'stock' => 80, 'min_stock' => 25, 'nearest_expiry_date' => Carbon::today()->addDays(20)],
+            ['sku' => 'TLR-MNTH-05', 'name' => 'Telur Mentah Salted Batch A', 'category_id' => $categories['Mentah']->id, 'unit_id' => $units['butir']->id, 'price' => 3000, 'purchase_price' => 2400, 'stock' => 280, 'min_stock' => 80, 'nearest_expiry_date' => Carbon::today()->addDays(5)],
         ])->mapWithKeys(fn (array $data) => [
             $data['sku'] => Product::updateOrCreate(['sku' => $data['sku']], $data),
         ]);

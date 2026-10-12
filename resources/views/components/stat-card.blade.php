@@ -6,6 +6,8 @@
         'emerald' => 'bg-emerald-50 text-emerald-600',
         'rose' => 'bg-rose-50 text-rose-600',
         'slate' => 'bg-slate-100 text-slate-600',
+        'indigo' => 'bg-indigo-50 text-indigo-600',
+        'blue' => 'bg-blue-50 text-blue-600',
     ];
 @endphp
 

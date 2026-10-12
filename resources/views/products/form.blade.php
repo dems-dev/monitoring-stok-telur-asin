@@ -69,7 +69,7 @@
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                    <label for="price" class="block text-xs font-semibold text-slate-600 mb-1">Harga Satuan (Rp)</label>
+                    <label for="price" class="block text-xs font-semibold text-slate-600 mb-1">Harga Jual (Rp)</label>
                     <input id="price" name="price" type="number" min="0" step="1" required
                            value="{{ old('price', $product->price ?? 0) }}"
                            class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-amber-500">
@@ -77,11 +77,34 @@
                 </div>
 
                 <div>
+                    <label for="purchase_price" class="block text-xs font-semibold text-slate-600 mb-1">
+                        Harga Beli / Modal (Rp) <span class="text-slate-400 font-normal">(opsional)</span>
+                    </label>
+                    <input id="purchase_price" name="purchase_price" type="number" min="0" step="1"
+                           value="{{ old('purchase_price', $product->purchase_price ?? 0) }}"
+                           placeholder="0"
+                           class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-amber-500">
+                    @error('purchase_price') <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
                     <label for="min_stock" class="block text-xs font-semibold text-slate-600 mb-1">Batas Minimum Stok</label>
                     <input id="min_stock" name="min_stock" type="number" min="0" step="1" required
                            value="{{ old('min_stock', $product->min_stock ?? 0) }}"
                            class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-amber-500">
                     @error('min_stock') <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
+                </div>
+
+                <div>
+                    <label for="nearest_expiry_date" class="block text-xs font-semibold text-slate-600 mb-1">
+                        Tanggal Kedaluwarsa Terdekat <span class="text-slate-400 font-normal">(opsional)</span>
+                    </label>
+                    <input id="nearest_expiry_date" name="nearest_expiry_date" type="date"
+                           value="{{ old('nearest_expiry_date', $product->nearest_expiry_date?->toDateString()) }}"
+                           class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-amber-500">
+                    @error('nearest_expiry_date') <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
                 </div>
             </div>
 
