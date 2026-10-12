@@ -19,7 +19,7 @@
 
     <!-- Print-Only Header untuk Cetak Kertas -->
     <div class="hidden print-only mb-6 border-b-2 border-slate-900 pb-3">
-        <h1 class="text-xl font-extrabold uppercase tracking-wide">SIM-STOK TELUR ASIN &mdash; LAPORAN MUTASI</h1>
+        <h1 class="text-xl font-extrabold uppercase tracking-wide">SIM-STOK TELUR ASIN - LAPORAN MUTASI</h1>
         <p class="text-xs text-slate-600 mt-1">
             Periode: {{ $filters['start_date'] ?? 'Semua' }} s/d {{ $filters['end_date'] ?? 'Semua' }}
             @if (!empty($filters['type'])) &middot; Jenis: {{ $filters['type'] }} @endif
@@ -60,7 +60,7 @@
                         <option value="">Semua Produk</option>
                         @foreach ($products as $product)
                             <option value="{{ $product->id }}" @selected(($filters['product_id'] ?? null) == $product->id)>
-                                {{ $product->sku }} &mdash; {{ $product->name }}
+                                {{ $product->sku }} - {{ $product->name }}
                             </option>
                         @endforeach
                     </select>

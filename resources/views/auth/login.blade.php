@@ -66,9 +66,9 @@
             <div class="mt-6 pt-5 border-t border-slate-100">
                 <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Akun contoh (hanya lokal)</p>
                 <ul class="text-xs text-slate-500 space-y-1 font-mono">
-                    <li>admin / admin123 &mdash; Super Admin</li>
-                    <li>petugas / petugas123 &mdash; Petugas Gudang</li>
-                    <li>owner / owner123 &mdash; Pemilik Toko (read-only)</li>
+                    <li>admin / admin123 - Super Admin</li>
+                    <li>petugas / petugas123 - Petugas Gudang</li>
+                    <li>owner / owner123 - Pemilik Toko (read-only)</li>
                 </ul>
             </div>
         @endif

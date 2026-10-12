@@ -43,7 +43,7 @@
                     <option value="">-- Pilih varian --</option>
                     @foreach ($products as $product)
                         <option value="{{ $product->id }}" @selected(old('product_id') == $product->id)>
-                            {{ $product->sku }} &mdash; {{ $product->name }} (stok {{ number_format($product->stock, 0, ',', '.') }} {{ $product->unit?->name ?? 'butir' }})
+                            {{ $product->sku }} - {{ $product->name }} (stok {{ number_format($product->stock, 0, ',', '.') }} {{ $product->unit?->name ?? 'butir' }})
                         </option>
                     @endforeach
                 </select>

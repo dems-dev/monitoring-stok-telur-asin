@@ -57,7 +57,7 @@
                                 data-stock="{{ $product->stock }}"
                                 data-unit="{{ $product->unit?->name ?? 'butir' }}"
                                 @selected(old('product_id') == $product->id)>
-                            {{ $product->sku }} &mdash; {{ $product->name }} (Stok Sistem: {{ number_format($product->stock, 0, ',', '.') }} {{ $product->unit?->name ?? 'butir' }})
+                            {{ $product->sku }} - {{ $product->name }} (Stok Sistem: {{ number_format($product->stock, 0, ',', '.') }} {{ $product->unit?->name ?? 'butir' }})
                         </option>
                     @endforeach
                 </select>
