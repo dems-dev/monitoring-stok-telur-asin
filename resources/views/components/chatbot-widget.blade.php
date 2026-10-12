@@ -96,8 +96,9 @@
                             <div class="w-7 h-7 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center text-xs shrink-0 mt-0.5">
                                 <i class="fa-solid fa-robot"></i>
                             </div>
+                            <!-- x-html aman: formatBot() meng-escape seluruh HTML sebelum menambah <strong>. -->
                             <div class="bg-white border border-slate-200/90 rounded-2xl rounded-tl-xs p-3 text-xs text-slate-800 shadow-2xs max-w-[85%] whitespace-pre-line leading-relaxed break-words"
-                                 x-text="msg.text">
+                                 x-html="formatBot(msg.text)">
                             </div>
                         </div>
                     </template>
@@ -226,6 +227,25 @@ function chatbotWidget() {
             .then(() => {
                 this.messages = [];
             });
+        },
+
+        /**
+         * Ubah jawaban bot menjadi HTML yang aman: escape semua karakter HTML
+         * lebih dulu, baru format Markdown sederhana (**tebal**, poin "* ").
+         */
+        formatBot(text) {
+            const escaped = String(text ?? '')
+                // Riwayat chat lama masih menyimpan entitas &mdash; mentah.
+                .replace(/&mdash;/g, '-')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+
+            return escaped
+                .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                .replace(/^\* /gm, '• ');
         },
 
         scrollToBottom() {

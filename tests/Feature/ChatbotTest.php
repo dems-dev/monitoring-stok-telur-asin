@@ -7,13 +7,26 @@ use App\Models\ChatLog;
 use App\Models\Product;
 use App\Models\StockLog;
 use App\Models\User;
+use App\Services\ChatbotService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\Request;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\RateLimiter;
 use Tests\TestCase;
 
 class ChatbotTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // Test memakai resolver lokal kecuali diatur lain, dan tidak boleh
+        // memanggil API Gemini sungguhan walau GEMINI_API_KEY ada di .env.
+        config(['services.gemini.api_key' => null]);
+        Http::preventStrayRequests();
+    }
 
     public function test_tamu_tidak_bisa_mengakses_chatbot(): void
     {
@@ -169,6 +182,78 @@ class ChatbotTest extends TestCase
         $response = $this->actingAs($user)->postJson('/chatbot/message', ['message' => 'Tes ke 21']);
         $response->assertStatus(429);
         $response->assertJsonStructure(['error', 'reply']);
+    }
+
+    public function test_chatbot_memanggil_gemini_dengan_api_key_di_header_dan_mengeksekusi_tool(): void
+    {
+        config([
+            'services.gemini.api_key' => 'kunci-uji-rahasia',
+            'services.gemini.model' => 'gemini-model-uji',
+        ]);
+
+        Product::factory()->create(['name' => 'Telur Asin Original Rebus', 'sku' => 'TLR-ORIG-01', 'stock' => 321]);
+
+        Http::fake([
+            'generativelanguage.googleapis.com/*' => Http::sequence()
+                ->push(['candidates' => [['content' => ['role' => 'model', 'parts' => [[
+                    'functionCall' => ['name' => 'cek_stok', 'args' => ['nama_produk' => 'Original']],
+                    'thoughtSignature' => 'tanda-tangan-uji',
+                ]]]]]])
+                ->push(['candidates' => [['content' => ['role' => 'model', 'parts' => [
+                    ['text' => 'Ringkasan penalaran internal', 'thought' => true],
+                    ['text' => 'Stok Telur Asin Original Rebus saat ini 321 butir.'],
+                ]]]]]),
+        ]);
+
+        $response = $this->actingAs(User::factory()->create())
+            ->postJson('/chatbot/message', ['message' => 'Berapa stok original?']);
+
+        $response->assertOk()
+            ->assertJson([
+                'tool_called' => 'cek_stok',
+                'reply' => 'Stok Telur Asin Original Rebus saat ini 321 butir.',
+            ]);
+
+        Http::assertSentCount(2);
+
+        // API key lewat header, tidak pernah muncul di URL; model diambil dari config.
+        Http::assertSent(fn (Request $request) => $request->hasHeader('x-goog-api-key', 'kunci-uji-rahasia')
+            && ! str_contains($request->url(), 'kunci-uji-rahasia')
+            && str_contains($request->url(), 'models/gemini-model-uji:generateContent'));
+
+        // Permintaan kedua mengirim ulang konten model utuh (thoughtSignature) dan data riil dari database.
+        Http::assertSent(fn (Request $request) => ($request['contents'][1]['parts'][0]['thoughtSignature'] ?? null) === 'tanda-tangan-uji'
+            && ($request['contents'][2]['parts'][0]['functionResponse']['response']['data'][0]['stok'] ?? null) === 321);
+    }
+
+    public function test_chatbot_kembali_ke_resolver_lokal_bila_gemini_gagal(): void
+    {
+        config(['services.gemini.api_key' => 'kunci-uji-rahasia']);
+
+        Product::factory()->create(['name' => 'Telur Asin Bumbu Masir', 'stock' => 5, 'min_stock' => 10]);
+
+        Http::fake(['generativelanguage.googleapis.com/*' => Http::response(['error' => ['message' => 'model not found']], 404)]);
+
+        $response = $this->actingAs(User::factory()->create())
+            ->postJson('/chatbot/message', ['message' => 'Daftar stok menipis']);
+
+        $response->assertOk()->assertJson(['tool_called' => 'daftar_stok_menipis']);
+        $this->assertStringContainsString('Telur Asin Bumbu Masir', $response->json('reply'));
+        $this->assertStringNotContainsString('&mdash;', $response->json('reply'));
+    }
+
+    public function test_error_internal_tidak_dibocorkan_ke_klien(): void
+    {
+        $this->mock(ChatbotService::class)
+            ->shouldReceive('handle')
+            ->andThrow(new \RuntimeException('SQLSTATE[42S02] tabel rahasia di C:\\server\\app'));
+
+        $response = $this->actingAs(User::factory()->create())
+            ->postJson('/chatbot/message', ['message' => 'Halo']);
+
+        $response->assertStatus(500)->assertJson(['error' => 'server_error']);
+        $this->assertStringNotContainsString('SQLSTATE', $response->getContent());
+        $this->assertStringNotContainsString('rahasia', $response->getContent());
     }
 
     public function test_user_bisa_melihat_dan_menghapus_riwayat_chat(): void

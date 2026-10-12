@@ -29,6 +29,16 @@ class User extends Authenticatable
     ];
 
     /**
+     * Samakan dengan default kolom di database, supaya model yang baru dibuat
+     * (belum dimuat ulang) tidak terbaca is_active = null alias nonaktif.
+     *
+     * @var array<string, mixed>
+     */
+    protected $attributes = [
+        'is_active' => true,
+    ];
+
+    /**
      * The attributes that should be hidden for serialization.
      *
      * @var list<string>

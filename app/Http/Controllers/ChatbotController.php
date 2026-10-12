@@ -46,9 +46,13 @@ class ChatbotController extends Controller
                 'tool_called' => $result['tool_called'],
             ]);
         } catch (\Throwable $e) {
+            // Detail error hanya masuk log server; pesan mentah (SQL, path file)
+            // tidak boleh dikirim ke browser.
+            report($e);
+
             return response()->json([
+                'error' => 'server_error',
                 'reply' => 'Maaf, terjadi gangguan saat memproses pertanyaan Anda. Silakan coba sesaat lagi.',
-                'error' => $e->getMessage(),
             ], 500);
         }
     }

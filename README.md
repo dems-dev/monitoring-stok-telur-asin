@@ -61,6 +61,7 @@ Aplikasi ini dibangun menggunakan arsitektur modern **Laravel 12**, **MariaDB/My
   - Kelola akun pengguna untuk peran Admin, Petugas, dan Pemilik.
   - Fitur reset password langsung oleh Admin (password baru di-hash bcrypt).
   - Mekanisme proteksi keamanan: Admin tidak dapat menghapus atau menonaktifkan akun miliknya sendiri, serta sistem mencegah penonaktifan akun Admin terakhir.
+  - Akun yang dinonaktifkan langsung dikeluarkan pada permintaan berikutnya (middleware `EnsureUserIsActive`), tidak menunggu sesi kedaluwarsa.
 
 - **AI Chatbot Persediaan (Hanya-Baca)**:
   - Widget chat interaktif mengambang di pojok kanan bawah berbasis Alpine.js.
@@ -71,7 +72,8 @@ Aplikasi ini dibangun menggunakan arsitektur modern **Laravel 12**, **MariaDB/My
     - `riwayat_barang_masuk(nama_produk, jumlah_hari)`
   - Aman dan anti-halusinasi: AI hanya merangkum data riil dari database.
   - Bersifat hanya-baca (*read-only*), tidak memiliki akses untuk mengubah maupun menghapus data.
-  - Dilengkapi *smart local fallback* jika API key LLM eksternal tidak dikonfigurasi.
+  - Dilengkapi *smart local fallback* jika API key LLM eksternal tidak dikonfigurasi atau panggilan API gagal.
+  - API key dikirim melalui header (bukan URL), dan detail error internal hanya dicatat di log server, tidak dikirim ke browser.
   - Pencatatan riwayat percakapan pada tabel `chat_logs` dan proteksi *Rate Limiting* (maksimal 20 permintaan/menit per pengguna).
 
 ---
@@ -90,7 +92,7 @@ Aplikasi ini dibangun menggunakan arsitektur modern **Laravel 12**, **MariaDB/My
 | **Ikon UI** | Font Awesome 6.4 (via CDN cdnjs) | Ikon antarmuka modern |
 | **Ekspor PDF** | `barryvdh/laravel-dompdf` | Format kop resmi, tabel presisi, ramah cetak A4 |
 | **Ekspor Excel** | `maatwebsite/excel` | Spreadsheet berekstensi .xlsx dengan format angka rapi |
-| **Testing** | PHPUnit / Laravel Test | 74 test (269 assertions, lulus 100%) |
+| **Testing** | PHPUnit / Laravel Test | 79 test (291 assertions, lulus 100%) |
 
 > **Catatan**: Chart.js, Font Awesome, dan font Plus Jakarta Sans dimuat dari CDN, sehingga grafik dan ikon membutuhkan koneksi internet. Lupa password ditangani oleh Admin melalui menu Manajemen Pengguna (tidak ada reset via email).
 
@@ -201,8 +203,11 @@ Seeder juga membuat 6 produk telur asin, 2 supplier, serta riwayat mutasi selama
    APP_LOCALE=id
 
    # Opsional: Jika ingin menggunakan LLM Gemini langsung untuk Chatbot
-   # GEMINI_API_KEY=AIzaSy...
+   GEMINI_API_KEY=AIzaSy...
+   GEMINI_MODEL=gemini-2.5-flash   # nama model Gemini yang masih tersedia
+   GEMINI_TIMEOUT=15               # batas waktu tiap panggilan API (detik)
    ```
+   Tanpa `GEMINI_API_KEY`, atau ketika panggilan API gagal, chatbot otomatis memakai resolver lokal berbasis kata kunci. Nilai ini dibaca melalui `config/services.php`, sehingga tetap berlaku setelah `php artisan config:cache`.
 
 5. **Buat Database & Jalankan Kunci Aplikasi**:
    Buat database baru di MySQL/MariaDB:
@@ -245,15 +250,15 @@ Aplikasi dilengkapi dengan rangkaian pengujian fitur (*Feature Tests*) lengkap y
 php artisan test
 ```
 
-### Ringkasan Cakupan Test (74 Tests, 269 Assertions - 100% Lulus):
-- `AuthenticationTest`: Login dengan username, penolakan password salah, pengalihan tamu ke halaman login, logout, penolakan akun nonaktif, dan pesan lupa password (hubungi Admin).
+### Ringkasan Cakupan Test (79 Tests, 291 Assertions - 100% Lulus):
+- `AuthenticationTest`: Login dengan username, penolakan password salah, pengalihan tamu ke halaman login, logout, penolakan akun nonaktif saat login maupun saat sesi masih aktif, dan pesan lupa password (hubungi Admin).
 - `RolePermissionTest`: Pembatasan hak akses Admin, Petugas, dan Pemilik; proteksi akun admin dari tindakan hapus/nonaktif diri sendiri.
 - `MasterDataTest`: Validasi keunikan SKU, harga tidak negatif, pencegahan penghapusan master data yang berelasi, serta mekanisme *soft delete*.
 - `StockMovementTest`: Penambahan stok saat barang masuk, pengurangan stok saat barang keluar, penolakan transaksi jika stok tidak mencukupi, penghitungan selisih stock opname, penolakan input tanggal masa depan.
 - `DashboardTest`: Otorisasi tampilan nilai persediaan aset (khusus Admin & Pemilik), verifikasi banner stok menipis, banner kedaluwarsa, pemisahan agregasi masuk vs keluar hari ini, isi data grafik tren 30 hari, serta View Composer lonceng header.
 - `ReportTest`: Filter laporan per mutasi/produk/petugas, verifikasi ekspor PDF, ekspor Excel, ekspor CSV dengan *escaping* tanda kutip, dan rekonsiliasi kartu stok.
 - `UserManagementTest`: Pembuatan user baru, reset password oleh admin, serta pencegahan menonaktifkan akun admin terakhir.
-- `ChatbotTest`: Akses terotentikasi, eksekusi tool calling baca data riil, logging percakapan ke `chat_logs`, *rate limiting*, dan pengujian bahwa chatbot tidak pernah memodifikasi stok.
+- `ChatbotTest`: Akses terotentikasi, eksekusi tool calling baca data riil, logging percakapan ke `chat_logs`, *rate limiting*, pengujian bahwa chatbot tidak pernah memodifikasi stok, alur tool calling Gemini (disimulasikan dengan `Http::fake`, API key lewat header), fallback saat API gagal, serta error internal yang tidak dibocorkan ke klien.
 - `SeederTest`: Data demo konsisten (stok produk = snapshot mutasi terakhir = saldo akhir kartu stok) dan seeder aman dijalankan berulang kali.
 
 ---
@@ -440,7 +445,7 @@ CACHE_STORE=database
 │   ├── Http/
 │   │   ├── Controllers/       # Dashboard, Product, Category, Unit, Supplier, StockMovement, Report, User, Chatbot
 │   │   │   └── Auth/          # LoginController (login username, rate limit, logout)
-│   │   ├── Middleware/        # EnsureRole (alias "role")
+│   │   ├── Middleware/        # EnsureRole (alias "role") & EnsureUserIsActive
 │   │   └── Requests/          # Form Requests dengan validasi ketat
 │   ├── Models/                # Product, StockLog, Category, Unit, Supplier, User, ChatLog
 │   ├── Policies/              # ProductPolicy
@@ -471,7 +476,7 @@ CACHE_STORE=database
 │   ├── console.php            # Perintah artisan konsol
 │   └── web.php                # Seluruh rute web (login, auth & role middleware)
 └── tests/
-    ├── Feature/               # 9 Feature Test Suites (73 pengujian)
+    ├── Feature/               # 9 Feature Test Suites (78 pengujian)
     └── Unit/                  # ExampleTest
 ```
 

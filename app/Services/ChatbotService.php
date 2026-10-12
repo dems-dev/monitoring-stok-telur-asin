@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\ChatLog;
 use App\Models\User;
+use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -21,7 +22,7 @@ class ChatbotService
      */
     public function handle(User $user, string $message): array
     {
-        $apiKey = config('services.gemini.api_key') ?: env('GEMINI_API_KEY') ?: env('LLM_API_KEY');
+        $apiKey = config('services.gemini.api_key');
 
         $toolCalled = null;
         $toolArgs = null;
@@ -73,8 +74,6 @@ class ChatbotService
      */
     protected function callGeminiWithTools(string $apiKey, string $message): array
     {
-        $url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' . $apiKey;
-
         $toolDeclarations = [
             [
                 'function_declarations' => [
@@ -139,24 +138,18 @@ class ChatbotService
             . "PENTING: Seluruh angka stok, harga, dan riwayat mutasi WAJIB diperoleh dari pemanggilan function tools yang tersedia. Jangan pernah mengarang angka atau data persediaan. "
             . "Jika pengguna hanya menyapa (halo/hai/pagi), perkenalkan diri Anda dan sebutkan bantuan yang bisa Anda berikan (cek stok produk, daftar stok menipis, produk terlaris, riwayat pasokan masuk).";
 
+        $userContent = ['role' => 'user', 'parts' => [['text' => $message]]];
+
         // Step 1: Kirim prompt user ke Gemini dengan tool declaration
-        $step1Response = Http::timeout(10)->post($url, [
-            'contents' => [
-                ['role' => 'user', 'parts' => [['text' => $message]]],
-            ],
-            'system_instruction' => [
-                'parts' => [['text' => $systemInstruction]],
-            ],
-            'tools' => $toolDeclarations,
-        ]);
+        $step1Response = $this->requestGemini($apiKey, [$userContent], $systemInstruction, $toolDeclarations);
 
         if (!$step1Response->successful()) {
-            throw new \Exception('Gemini API Error: ' . $step1Response->body());
+            throw new \Exception('Gemini API Error (HTTP ' . $step1Response->status() . '): ' . $step1Response->body());
         }
 
-        $candidates = $step1Response->json('candidates.0.content.parts', []);
+        $modelContent = $step1Response->json('candidates.0.content', []);
         $functionCall = null;
-        foreach ($candidates as $part) {
+        foreach ($modelContent['parts'] ?? [] as $part) {
             if (isset($part['functionCall'])) {
                 $functionCall = $part['functionCall'];
                 break;
@@ -165,7 +158,7 @@ class ChatbotService
 
         // Jika model tidak memanggil tool, ambil teks langsung
         if (!$functionCall) {
-            $textReply = $step1Response->json('candidates.0.content.parts.0.text', '');
+            $textReply = $this->extractText($modelContent);
             return [
                 'response' => $textReply ?: 'Halo! Ada yang bisa saya bantu terkait informasi persediaan stok telur asin?',
                 'tool_called' => null,
@@ -179,31 +172,31 @@ class ChatbotService
         $funcArgs = $functionCall['args'] ?? [];
         $toolExecutionResult = $this->executeTool($funcName, $funcArgs);
 
-        // Step 3: Kirim hasil tool kembali ke Gemini untuk sintesis bahasa alami
-        $step2Response = Http::timeout(10)->post($url, [
-            'contents' => [
-                ['role' => 'user', 'parts' => [['text' => $message]]],
-                ['role' => 'model', 'parts' => [['functionCall' => $functionCall]]],
-                [
-                    'role' => 'function',
-                    'parts' => [
-                        [
-                            'functionResponse' => [
-                                'name' => $funcName,
-                                'response' => $toolExecutionResult,
-                            ],
+        // Step 3: Kirim hasil tool kembali ke Gemini untuk sintesis bahasa alami.
+        // Konten model dikirim ulang utuh (bukan hanya functionCall) agar
+        // thoughtSignature yang disertakan model Gemini 2.5+ tidak hilang.
+        $step2Response = $this->requestGemini($apiKey, [
+            $userContent,
+            $modelContent,
+            [
+                'role' => 'user',
+                'parts' => [
+                    [
+                        'functionResponse' => [
+                            'name' => $funcName,
+                            'response' => $toolExecutionResult,
                         ],
                     ],
                 ],
             ],
-            'system_instruction' => [
-                'parts' => [['text' => $systemInstruction]],
-            ],
-            'tools' => $toolDeclarations,
-        ]);
+        ], $systemInstruction, $toolDeclarations);
 
-        $synthesizedText = $step2Response->json('candidates.0.content.parts.0.text', '');
-        if (empty($synthesizedText)) {
+        $synthesizedText = $step2Response->successful()
+            ? $this->extractText($step2Response->json('candidates.0.content', []))
+            : '';
+
+        // Bila sintesis gagal, jawaban tetap disusun dari data tool (bukan karangan model).
+        if ($synthesizedText === '') {
             $synthesizedText = $this->formatFallbackText($funcName, $toolExecutionResult);
         }
 
@@ -213,6 +206,44 @@ class ChatbotService
             'tool_args' => $funcArgs,
             'tool_result' => $toolExecutionResult,
         ];
+    }
+
+    /**
+     * Kirim permintaan generateContent ke Gemini. API key dikirim lewat header,
+     * bukan query string, agar tidak ikut tercatat di log URL / pesan error.
+     *
+     * @param  array<int, array<string, mixed>>  $contents
+     * @param  array<int, array<string, mixed>>  $tools
+     */
+    protected function requestGemini(string $apiKey, array $contents, string $systemInstruction, array $tools): Response
+    {
+        $model = config('services.gemini.model', 'gemini-2.5-flash');
+        $url = "https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent";
+
+        return Http::withHeaders(['x-goog-api-key' => $apiKey])
+            ->timeout(config('services.gemini.timeout', 15))
+            ->post($url, [
+                'contents' => $contents,
+                'system_instruction' => [
+                    'parts' => [['text' => $systemInstruction]],
+                ],
+                'tools' => $tools,
+            ]);
+    }
+
+    /**
+     * Gabungkan seluruh bagian teks jawaban model, melewati bagian "thought"
+     * (ringkasan penalaran internal) yang tidak ditujukan untuk pengguna.
+     *
+     * @param  array<string, mixed>  $content
+     */
+    protected function extractText(array $content): string
+    {
+        return trim(collect($content['parts'] ?? [])
+            ->reject(fn ($part) => ($part['thought'] ?? false) === true)
+            ->pluck('text')
+            ->filter()
+            ->implode(''));
     }
 
     /**
@@ -334,7 +365,7 @@ class ChatbotService
 
                 $lines = ["⚠️ Ditemukan **{$result['total_menipis']} varian** produk dengan stok menipis / mencapai batas minimum:"];
                 foreach ($result['data'] as $item) {
-                    $lines[] = "• **{$item['nama']}** ({$item['sku']}): Sisa **{$item['stok_sekarang']} {$item['satuan']}** (Batas Min: {$item['batas_minimum']}) &mdash; [{$item['kondisi']}]";
+                    $lines[] = "• **{$item['nama']}** ({$item['sku']}): Sisa **{$item['stok_sekarang']} {$item['satuan']}** (Batas Min: {$item['batas_minimum']}) - [{$item['kondisi']}]";
                 }
                 return implode("\n", $lines);
 

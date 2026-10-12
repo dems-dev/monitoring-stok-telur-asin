@@ -28,6 +28,14 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    // AI Chatbot persediaan. env() hanya boleh dibaca di file config: setelah
+    // `php artisan config:cache`, env() di luar config mengembalikan null.
+    'gemini' => [
+        'api_key' => env('GEMINI_API_KEY', env('LLM_API_KEY')),
+        'model' => env('GEMINI_MODEL', 'gemini-2.5-flash'),
+        'timeout' => (int) env('GEMINI_TIMEOUT', 15),
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),

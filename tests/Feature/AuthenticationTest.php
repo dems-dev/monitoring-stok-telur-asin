@@ -72,6 +72,32 @@ class AuthenticationTest extends TestCase
         $this->assertGuest();
     }
 
+    public function test_pengguna_yang_dinonaktifkan_saat_sesi_aktif_langsung_dikeluarkan(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->get('/dashboard')->assertOk();
+
+        // Admin menonaktifkan akun ketika user ini masih login.
+        $user->update(['is_active' => false]);
+
+        $this->get('/dashboard')
+            ->assertRedirect(route('login'))
+            ->assertSessionHasErrors(['username' => 'Akun Anda dinonaktifkan. Hubungi admin.']);
+        $this->assertGuest();
+    }
+
+    public function test_pengguna_nonaktif_ditolak_pada_permintaan_json(): void
+    {
+        $user = User::factory()->create(['is_active' => false]);
+
+        $this->actingAs($user)
+            ->postJson('/chatbot/message', ['message' => 'Halo'])
+            ->assertUnauthorized()
+            ->assertJson(['error' => 'account_inactive']);
+        $this->assertGuest();
+    }
+
     public function test_halaman_login_menampilkan_pesan_lupa_password_hubungi_admin(): void
     {
         $response = $this->get('/login');
