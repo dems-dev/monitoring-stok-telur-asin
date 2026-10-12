@@ -112,6 +112,30 @@ class DashboardTest extends TestCase
         $response->assertSee('60 ' . ($product->unit?->name ?? 'butir'));
     }
 
+    public function test_grafik_tren_30_hari_berisi_total_masuk_dan_keluar_per_tanggal(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $product = Product::factory()->create();
+
+        StockLog::factory()->create(['product_id' => $product->id, 'type' => LogType::MASUK, 'amount' => 100, 'logged_date' => today()]);
+        StockLog::factory()->create(['product_id' => $product->id, 'type' => LogType::MASUK, 'amount' => 20, 'logged_date' => today()]);
+        StockLog::factory()->create(['product_id' => $product->id, 'type' => LogType::KELUAR, 'amount' => 35, 'logged_date' => today()->subDays(3)]);
+        // Di luar rentang 30 hari, tidak boleh ikut terhitung.
+        StockLog::factory()->create(['product_id' => $product->id, 'type' => LogType::MASUK, 'amount' => 999, 'logged_date' => today()->subDays(40)]);
+
+        $response = $this->actingAs($admin)->get('/dashboard')->assertOk();
+
+        $trend = $response->viewData('charts')['trend'];
+
+        $this->assertCount(30, $trend['labels']);
+        // Indeks 29 = hari ini, indeks 26 = tiga hari lalu.
+        $this->assertSame(120, $trend['masuk'][29]);
+        $this->assertSame(0, $trend['keluar'][29]);
+        $this->assertSame(35, $trend['keluar'][26]);
+        $this->assertSame(120, array_sum($trend['masuk']));
+        $this->assertSame(35, array_sum($trend['keluar']));
+    }
+
     public function test_view_composer_menyediakan_jumlah_stok_menipis_di_header(): void
     {
         $admin = User::factory()->admin()->create();

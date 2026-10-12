@@ -65,7 +65,9 @@ return [
     |
     */
 
-    'timezone' => 'UTC',
+    // Dibaca dari .env; bawaan WIB karena "hari ini" pada dashboard dan
+    // validasi tanggal transaksi harus mengikuti jam toko, bukan UTC.
+    'timezone' => env('APP_TIMEZONE', 'Asia/Jakarta'),
 
     /*
     |--------------------------------------------------------------------------

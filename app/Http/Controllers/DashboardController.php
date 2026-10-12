@@ -79,7 +79,10 @@ class DashboardController extends Controller
         $trendLogs = StockLog::where('logged_date', '>=', $startDate)
             ->select('logged_date', 'type', DB::raw('SUM(amount) as total'))
             ->groupBy('logged_date', 'type')
-            ->get();
+            ->get()
+            // logged_date di-cast ke Carbon, jadi kunci dibentuk dari string tanggal
+            // agar bisa dicocokkan dengan tanggal pada sumbu grafik.
+            ->mapWithKeys(fn ($row) => [$row->logged_date->toDateString().'|'.$row->type->value => (int) $row->total]);
 
         $trendLabels = [];
         $trendMasuk = [];
@@ -90,8 +93,8 @@ class DashboardController extends Controller
             $dateString = $currentDate->toDateString();
 
             $trendLabels[] = $currentDate->format('d M');
-            $trendMasuk[] = (int) ($trendLogs->where('logged_date', $dateString)->where('type', LogType::MASUK)->first()?->total ?? 0);
-            $trendKeluar[] = (int) ($trendLogs->where('logged_date', $dateString)->where('type', LogType::KELUAR)->first()?->total ?? 0);
+            $trendMasuk[] = $trendLogs[$dateString.'|'.LogType::MASUK->value] ?? 0;
+            $trendKeluar[] = $trendLogs[$dateString.'|'.LogType::KELUAR->value] ?? 0;
         }
 
         // 8. Grafik c: 5 Produk Terlaris Bulan Ini (Horizontal Bar)

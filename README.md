@@ -82,21 +82,29 @@ Aplikasi ini dibangun menggunakan arsitektur modern **Laravel 12**, **MariaDB/My
 |---|---|---|
 | **Framework Backend** | Laravel 12 (PHP 8.3 / 8.4) | Arsitektur MVC, Form Request Validation, Eloquent ORM |
 | **Database** | MariaDB 10.4+ / MySQL 8.0+ | Transaksi ACID, InnoDB engine, Foreign Keys |
-| **Autentikasi** | Laravel Breeze (Blade Stack) | Login rate limiter, BCrypt hashing, sesi terproteksi |
-| **Otorisasi / RBAC** | `spatie/laravel-permission` | Role & Policy middleware terpusat |
+| **Autentikasi** | `LoginController` kustom (berbasis username) | Login rate limiter (5 percobaan per username + IP), BCrypt hashing, regenerasi sesi, penolakan akun nonaktif |
+| **Otorisasi / RBAC** | Enum `App\Enums\Role` + middleware `EnsureRole` + `ProductPolicy` | Dibangun tanpa paket pihak ketiga; aturan peran terpusat di enum sehingga mudah ditelusuri |
 | **Styling & CSS** | Tailwind CSS v4 via Vite | Responsif (desktop, tablet, mobile), tema amber |
-| **Interaktivitas UI** | Alpine.js | Navigasi responsif, modal interaktif, widget chatbot |
-| **Visualisasi Grafik** | Chart.js | Grafik stok vs target, tren 30 hari, top terlaris |
-| **Ikon UI** | Font Awesome 6 (SVG & CSS) | Ikon antarmuka modern |
+| **Interaktivitas UI** | Alpine.js (via npm) | Navigasi responsif, modal interaktif, widget chatbot |
+| **Visualisasi Grafik** | Chart.js 4.4 (via CDN jsDelivr) | Grafik stok vs batas minimum, tren 30 hari, top terlaris |
+| **Ikon UI** | Font Awesome 6.4 (via CDN cdnjs) | Ikon antarmuka modern |
 | **Ekspor PDF** | `barryvdh/laravel-dompdf` | Format kop resmi, tabel presisi, ramah cetak A4 |
 | **Ekspor Excel** | `maatwebsite/excel` | Spreadsheet berekstensi .xlsx dengan format angka rapi |
-| **Testing** | PHPUnit / Laravel Test | 70 Feature Tests (244 assertions lolos 100%) |
+| **Testing** | PHPUnit / Laravel Test | 74 test (269 assertions, lulus 100%) |
+
+> **Catatan**: Chart.js, Font Awesome, dan font Plus Jakarta Sans dimuat dari CDN, sehingga grafik dan ikon membutuhkan koneksi internet. Lupa password ditangani oleh Admin melalui menu Manajemen Pengguna (tidak ada reset via email).
 
 ---
 
 ## Matriks Hak Akses (Role-Based Access Control)
 
-Hak akses ditegakkan di sisi server melalui middleware route (`role:ADMIN`, `role:ADMIN,PETUGAS`) dan Laravel Policy (`ProductPolicy`), bukan sekadar menyembunyikan elemen tombol di tampilan.
+Hak akses ditegakkan di sisi server, bukan sekadar menyembunyikan elemen tombol di tampilan, melalui tiga lapis:
+
+1. **Middleware route** `EnsureRole` (alias `role`), misalnya `role:ADMIN` dan `role:ADMIN,PETUGAS` di `routes/web.php`.
+2. **Laravel Policy** `ProductPolicy` untuk aksi master produk.
+3. **`authorize()` pada Form Request** transaksi stok.
+
+Peran disimpan sebagai kolom `role` (ENUM `ADMIN`, `PETUGAS`, `OWNER`) pada tabel `users` dan dipetakan ke enum PHP `App\Enums\Role`, yang memuat aturan `canRecordMutation()` dan `canManageMasterData()`.
 
 | Fitur / Modul | ADMIN | PETUGAS | PEMILIK (OWNER) |
 |---|:---:|:---:|:---:|
@@ -119,7 +127,7 @@ Hak akses ditegakkan di sisi server melalui middleware route (`role:ADMIN`, `rol
 ## Alur Transaksi dan Integritas Stok
 
 ### 1. Alur Barang Masuk
-Petugas/Admin menerima stok telur asin dari supplier atau dapur produksi -> Membuka menu **Barang Masuk** -> Memilih produk, tanggal penerimaan, supplier, jumlah masuk, dan catatan -> Sistem menjalankan `StockService::barangMasuk()` -> Stok produk terkunci (`lockForUpdate`) -> Stok bertambah -> Snapshot sebelum dan sesudah tersimpan di `stock_movements`.
+Petugas/Admin menerima stok telur asin dari supplier atau dapur produksi -> Membuka menu **Barang Masuk** -> Memilih produk, tanggal penerimaan, supplier, jumlah masuk, dan catatan -> Sistem menjalankan `StockService::barangMasuk()` -> Stok produk terkunci (`lockForUpdate`) -> Stok bertambah -> Snapshot sebelum dan sesudah tersimpan di tabel `stock_logs`.
 
 ### 2. Alur Barang Keluar
 Petugas/Admin mencatat pengeluaran stok -> Membuka menu **Barang Keluar** -> Memilih produk, jumlah keluar, kategori keluar (*terjual*, *distribusi*, *rusak*, atau *kedaluwarsa*), tujuan pengiriman, dan tanggal -> Sistem mengecek ketersediaan stok fisik -> Jika stok tidak cukup, sistem langsung menolak dan membatalkan transaksi -> Jika cukup, stok berkurang dan snapshot tersimpan.
@@ -143,6 +151,8 @@ Database seeder menyediakan 3 akun awal untuk kebutuhan demonstrasi dan pengujia
 | `admin` | `admin123` | **ADMIN** | Pengelolaan penuh sistem, master data, user, transaksi, dan laporan |
 | `petugas` | `petugas123` | **PETUGAS** | Operasional harian: input barang masuk, barang keluar, dan stock opname |
 | `owner` | `owner123` | **PEMILIK** | Pengawasan eksekutif: pantau dashboard, nilai persediaan aset, dan ekspor laporan |
+
+Seeder juga membuat 6 produk telur asin, 2 supplier, serta riwayat mutasi selama 7 hari terakhir. Stok awal produk diisi melalui `StockService` (bukan ditulis langsung ke kolom stok), sehingga dashboard, laporan, dan kartu stok pada data demo saling konsisten. Seeder aman dijalankan ulang tanpa menggandakan stok.
 
 > **Perhatian**: Untuk implementasi di lingkungan produksi, segera ubah seluruh password akun default di atas melalui menu Manajemen Pengguna.
 
@@ -235,14 +245,16 @@ Aplikasi dilengkapi dengan rangkaian pengujian fitur (*Feature Tests*) lengkap y
 php artisan test
 ```
 
-### Ringkasan Cakupan Test (70 Tests - 100% Lulus):
+### Ringkasan Cakupan Test (74 Tests, 269 Assertions - 100% Lulus):
+- `AuthenticationTest`: Login dengan username, penolakan password salah, pengalihan tamu ke halaman login, logout, penolakan akun nonaktif, dan pesan lupa password (hubungi Admin).
 - `RolePermissionTest`: Pembatasan hak akses Admin, Petugas, dan Pemilik; proteksi akun admin dari tindakan hapus/nonaktif diri sendiri.
 - `MasterDataTest`: Validasi keunikan SKU, harga tidak negatif, pencegahan penghapusan master data yang berelasi, serta mekanisme *soft delete*.
 - `StockMovementTest`: Penambahan stok saat barang masuk, pengurangan stok saat barang keluar, penolakan transaksi jika stok tidak mencukupi, penghitungan selisih stock opname, penolakan input tanggal masa depan.
-- `DashboardTest`: Otorisasi tampilan nilai persediaan aset (khusus Admin & Pemilik), verifikasi banner stok menipis, banner kedaluwarsa, pemisahan agregasi masuk vs keluar hari ini, serta View Composer lonceng header.
+- `DashboardTest`: Otorisasi tampilan nilai persediaan aset (khusus Admin & Pemilik), verifikasi banner stok menipis, banner kedaluwarsa, pemisahan agregasi masuk vs keluar hari ini, isi data grafik tren 30 hari, serta View Composer lonceng header.
 - `ReportTest`: Filter laporan per mutasi/produk/petugas, verifikasi ekspor PDF, ekspor Excel, ekspor CSV dengan *escaping* tanda kutip, dan rekonsiliasi kartu stok.
 - `UserManagementTest`: Pembuatan user baru, reset password oleh admin, serta pencegahan menonaktifkan akun admin terakhir.
 - `ChatbotTest`: Akses terotentikasi, eksekusi tool calling baca data riil, logging percakapan ke `chat_logs`, *rate limiting*, dan pengujian bahwa chatbot tidak pernah memodifikasi stok.
+- `SeederTest`: Data demo konsisten (stok produk = snapshot mutasi terakhir = saldo akhir kartu stok) dan seeder aman dijalankan berulang kali.
 
 ---
 
@@ -423,40 +435,44 @@ CACHE_STORE=database
 
 ```text
 ├── app/
-│   ├── Enums/                 # Role (ADMIN, PETUGAS, OWNER) & MovementType
+│   ├── Enums/                 # Role (ADMIN, PETUGAS, OWNER) & LogType (MASUK, KELUAR, PENYESUAIAN)
+│   ├── Exports/               # StockMovementExport & StockCardExport (Excel)
 │   ├── Http/
-│   │   ├── Controllers/       # Dashboard, Product, Category, Unit, Supplier, Stock, Report, User, Chatbot
-│   │   ├── Middleware/        # CheckRole middleware
+│   │   ├── Controllers/       # Dashboard, Product, Category, Unit, Supplier, StockMovement, Report, User, Chatbot
+│   │   │   └── Auth/          # LoginController (login username, rate limit, logout)
+│   │   ├── Middleware/        # EnsureRole (alias "role")
 │   │   └── Requests/          # Form Requests dengan validasi ketat
-│   ├── Models/                # Product, StockMovement, Category, Unit, Supplier, User, ChatLog
+│   ├── Models/                # Product, StockLog, Category, Unit, Supplier, User, ChatLog
 │   ├── Policies/              # ProductPolicy
-│   ├── Services/              # StockService (Core transaksi aman) & ChatbotService (AI tool-calling)
-│   └── View/Composers/        # HeaderComposer (penghitung stok menipis pada navbar)
-├── config/                    # Konfigurasi aplikasi, permission, dompdf, excel
+│   ├── Providers/             # AppServiceProvider (View Composer badge lonceng header)
+│   └── Services/              # StockService (transaksi stok), ChatbotService & ChatbotToolService (AI tool-calling)
+├── config/                    # Konfigurasi aplikasi (timezone dibaca dari APP_TIMEZONE)
 ├── database/
 │   ├── factories/             # Factory pengujian
-│   ├── migrations/            # Skema tabel database (termasuk soft deletes & chat_logs)
-│   └── seeders/               # RoleSeeder, UserSeeder, CategorySeeder, UnitSeeder, ProductSeeder
+│   ├── migrations/            # Skema tabel: products, stock_logs, categories, units, suppliers, chat_logs
+│   └── seeders/               # DatabaseSeeder (user demo, master data, mutasi awal via StockService)
+├── docs/prototype/            # Prototipe HTML lama sebagai referensi tampilan
 ├── resources/
 │   ├── css/                   # app.css (Tailwind CSS v4)
-│   ├── js/                    # app.js (Alpine.js & Chart.js)
+│   ├── js/                    # app.js (Alpine.js & konfirmasi hapus)
 │   └── views/
-│       ├── auth/              # Halaman login modern bernuansa amber
+│       ├── auth/              # Halaman login bernuansa amber
 │       ├── categories/        # Tampilan CRUD kategori
-│       ├── components/        # Blade components (nav-link, chatbot-widget, stat-card)
+│       ├── components/        # Blade components (nav-link, chatbot-widget, role-banner, stat-card)
 │       ├── layouts/           # Layout utama aplikasi dengan sidebar & header responsif
 │       ├── products/          # Tampilan katalog produk, filter, dan pagination
-│       ├── reports/           # Laporan mutasi, kartu stok, template PDF & Excel
+│       ├── reports/           # Laporan mutasi, kartu stok, dan template PDF
 │       ├── stock/             # Form Barang Masuk, Barang Keluar, dan Stock Opname
 │       ├── suppliers/         # Tampilan CRUD supplier
 │       ├── units/             # Tampilan CRUD satuan
-│       └── users/             # Tampilan manajemen user dan form reset password
+│       ├── users/             # Tampilan manajemen user dan form reset password
+│       └── dashboard.blade.php
 ├── routes/
-│   ├── auth.php               # Rute autentikasi
 │   ├── console.php            # Perintah artisan konsol
-│   └── web.php                # Rute web terproteksi middleware auth & role
+│   └── web.php                # Seluruh rute web (login, auth & role middleware)
 └── tests/
-    └── Feature/               # 7 Feature Test Suites (70 pengujian otomatis)
+    ├── Feature/               # 9 Feature Test Suites (73 pengujian)
+    └── Unit/                  # ExampleTest
 ```
 
 ---
