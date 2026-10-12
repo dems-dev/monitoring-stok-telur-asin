@@ -4,20 +4,24 @@ namespace App\Http\Controllers;
 
 use App\Enums\LogType;
 use App\Http\Requests\StoreStockMovementRequest;
+use App\Http\Requests\StoreStockOpnameRequest;
 use App\Models\Product;
-use App\Models\StockLog;
+use App\Models\Supplier;
+use App\Services\StockService;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class StockMovementController extends Controller
 {
+    public function __construct(
+        protected StockService $stockService
+    ) {}
+
     public function createMasuk(): View
     {
         return view('stock.masuk', [
             'products' => $this->selectableProducts(),
-            'suppliers' => \App\Models\Supplier::orderBy('name')->get(),
+            'suppliers' => Supplier::orderBy('name')->get(),
         ]);
     }
 
@@ -29,62 +33,71 @@ class StockMovementController extends Controller
         ]);
     }
 
+    public function createOpname(): View
+    {
+        return view('stock.opname', [
+            'products' => $this->selectableProducts(),
+        ]);
+    }
+
     public function storeMasuk(StoreStockMovementRequest $request): RedirectResponse
     {
-        $amount = $this->record($request, LogType::MASUK);
+        $data = $request->validated();
+        $product = Product::findOrFail($data['product_id']);
+
+        $log = $this->stockService->barangMasuk(
+            $product,
+            (int) $data['amount'],
+            $data,
+            $request->user()
+        );
+
+        $unitName = $product->unit?->name ?? 'butir';
 
         return redirect()
             ->route('dashboard')
-            ->with('status', "Stok masuk +{$amount} berhasil disimpan.");
+            ->with('status', "Stok masuk +{$log->amount} {$unitName} ({$product->name}) berhasil disimpan.");
     }
 
     public function storeKeluar(StoreStockMovementRequest $request): RedirectResponse
     {
-        $amount = $this->record($request, LogType::KELUAR);
+        $data = $request->validated();
+        $product = Product::findOrFail($data['product_id']);
+
+        $log = $this->stockService->barangKeluar(
+            $product,
+            (int) $data['amount'],
+            $data,
+            $request->user()
+        );
+
+        $unitName = $product->unit?->name ?? 'butir';
 
         return redirect()
             ->route('dashboard')
-            ->with('status', "Transaksi barang keluar -{$amount} berhasil disimpan.");
+            ->with('status', "Transaksi barang keluar -{$log->amount} {$unitName} ({$product->name}) berhasil disimpan.");
     }
 
-    /**
-     * Catat mutasi dan sesuaikan stok dalam satu transaksi.
-     *
-     * Baris produk dikunci lewat lockForUpdate agar dua entri bersamaan tidak
-     * saling menimpa dan membuat stok keluar melebihi stok fisik.
-     */
-    private function record(StoreStockMovementRequest $request, LogType $type): int
+    public function storeOpname(StoreStockOpnameRequest $request): RedirectResponse
     {
         $data = $request->validated();
+        $product = Product::with('unit')->findOrFail($data['product_id']);
 
-        return DB::transaction(function () use ($data, $type, $request): int {
-            $product = Product::with('unit')->whereKey($data['product_id'])->lockForUpdate()->firstOrFail();
-            $amount = (int) $data['amount'];
+        $log = $this->stockService->penyesuaian(
+            $product,
+            (int) $data['stok_fisik'],
+            $data['alasan'],
+            $request->user(),
+            $data['logged_date']
+        );
 
-            if ($type === LogType::KELUAR && $product->stock < $amount) {
-                $unitName = $product->unit?->name ?? 'butir';
-                throw ValidationException::withMessages([
-                    'amount' => "Stok fisik tidak mencukupi. Stok {$product->name} saat ini {$product->stock} {$unitName}.",
-                ]);
-            }
+        $unitName = $product->unit?->name ?? 'butir';
+        $selisih = $log->stok_sesudah - $log->stok_sebelum;
+        $tanda = $selisih > 0 ? "+{$selisih}" : ($selisih < 0 ? "{$selisih}" : "0");
 
-            $product->stock += $type->sign() * $amount;
-            $product->save();
-
-            StockLog::create([
-                'type' => $type,
-                'product_id' => $product->id,
-                'user_id' => $request->user()->id,
-                'supplier_id' => $data['supplier_id'] ?? null,
-                'amount' => $amount,
-                'source_or_target' => $data['source_or_target'],
-                'status' => $data['status'],
-                'note' => $data['note'] ?? null,
-                'logged_date' => $data['logged_date'],
-            ]);
-
-            return $amount;
-        });
+        return redirect()
+            ->route('dashboard')
+            ->with('status', "Stock opname {$product->name} berhasil disimpan. Stok fisik: {$log->stok_sesudah} {$unitName} (Selisih: {$tanda}).");
     }
 
     private function selectableProducts()

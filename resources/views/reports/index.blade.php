@@ -86,6 +86,7 @@
                                     'px-2 py-0.5 text-[10px] font-bold rounded-full',
                                     'bg-emerald-100 text-emerald-700' => $log->type === \App\Enums\LogType::MASUK,
                                     'bg-rose-100 text-rose-700' => $log->type === \App\Enums\LogType::KELUAR,
+                                    'bg-blue-100 text-blue-700' => $log->type === \App\Enums\LogType::PENYESUAIAN,
                                 ])>{{ $log->type->value }}</span>
                             </td>
                             <td class="py-3 px-4">
@@ -96,8 +97,13 @@
                                 'py-3 px-4 font-bold',
                                 'text-emerald-600' => $log->type === \App\Enums\LogType::MASUK,
                                 'text-rose-600' => $log->type === \App\Enums\LogType::KELUAR,
+                                'text-blue-600' => $log->type === \App\Enums\LogType::PENYESUAIAN,
                             ])>
-                                {{ $log->type === \App\Enums\LogType::MASUK ? '+' : '-' }}{{ number_format($log->amount, 0, ',', '.') }} butir
+                                {{ match($log->type) {
+                                    \App\Enums\LogType::MASUK => '+',
+                                    \App\Enums\LogType::KELUAR => '-',
+                                    \App\Enums\LogType::PENYESUAIAN => '±',
+                                } }}{{ number_format($log->amount, 0, ',', '.') }} {{ $log->product?->unit?->name ?? 'butir' }}
                             </td>
                             <td class="py-3 px-4 text-xs text-slate-600">{{ $log->source_or_target }}</td>
                             <td class="py-3 px-4 text-xs text-slate-500">

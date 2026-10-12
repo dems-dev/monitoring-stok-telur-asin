@@ -77,6 +77,7 @@
                                     'px-2 py-0.5 text-[10px] font-bold rounded-full',
                                     'bg-emerald-100 text-emerald-700' => $log->type === \App\Enums\LogType::MASUK,
                                     'bg-rose-100 text-rose-700' => $log->type === \App\Enums\LogType::KELUAR,
+                                    'bg-blue-100 text-blue-700' => $log->type === \App\Enums\LogType::PENYESUAIAN,
                                 ])>{{ $log->type->value }}</span>
                             </td>
                             <td class="py-3 px-4 font-medium text-slate-800">{{ $log->product?->name ?? '-' }}</td>

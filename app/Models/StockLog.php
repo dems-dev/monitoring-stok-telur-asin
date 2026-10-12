@@ -17,6 +17,8 @@ class StockLog extends Model
         'user_id',
         'supplier_id',
         'amount',
+        'stok_sebelum',
+        'stok_sesudah',
         'source_or_target',
         'status',
         'note',
@@ -28,6 +30,8 @@ class StockLog extends Model
         return [
             'type' => LogType::class,
             'amount' => 'integer',
+            'stok_sebelum' => 'integer',
+            'stok_sesudah' => 'integer',
             'logged_date' => 'date',
         ];
     }

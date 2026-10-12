@@ -40,6 +40,9 @@ Route::middleware('auth')->group(function (): void {
 
         Route::get('/barang-keluar', [StockMovementController::class, 'createKeluar'])->name('stock.keluar.create');
         Route::post('/barang-keluar', [StockMovementController::class, 'storeKeluar'])->name('stock.keluar.store');
+
+        Route::get('/stock-opname', [StockMovementController::class, 'createOpname'])->name('stock.opname.create');
+        Route::post('/stock-opname', [StockMovementController::class, 'storeOpname'])->name('stock.opname.store');
     });
 
     Route::get('/laporan', [ReportController::class, 'index'])->name('reports.index');

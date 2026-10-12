@@ -96,6 +96,9 @@
 
                 <x-nav-link :href="route('stock.keluar.create')" :active="request()->routeIs('stock.keluar.*')"
                             icon="fa-file-circle-minus" icon-color="text-rose-600" label="Barang Keluar" />
+
+                <x-nav-link :href="route('stock.opname.create')" :active="request()->routeIs('stock.opname.*')"
+                            icon="fa-clipboard-check" icon-color="text-blue-600" label="Stock Opname" />
             @endif
 
             <x-nav-link :href="route('reports.index')" :active="request()->routeIs('reports.*')"
