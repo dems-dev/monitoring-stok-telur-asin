@@ -28,9 +28,12 @@ Aplikasi ini dibangun menggunakan arsitektur modern **Laravel 12**, **MariaDB/My
   - Setiap perubahan stok dibungkus dalam `DB::transaction()` dengan penguncian baris `lockForUpdate()`.
   - Stok fisik tidak dapat bernilai negatif (validasi di sisi server menolak mutasi keluar yang melebihi ketersediaan stok).
   - Setiap mutasi mencatat snapshot `stok_sebelum`, `stok_sesudah`, dan `user_id` pembuat transaksi (*audit trail*).
+  - Satuan produk terkunci begitu produk memiliki riwayat mutasi, agar angka stok lama tidak berubah makna (mis. butir menjadi pack).
+  - Produk yang sudah dihapus (*soft delete*) tidak dapat dimutasi lagi.
+  - Ketahanan terhadap *race condition* dapat dibuktikan langsung di MySQL/MariaDB dengan `php artisan stok:uji-konkurensi` (lihat [Uji Konkurensi](#uji-konkurensi-race-condition)).
 
 - **Master Data Lengkap**:
-  - Manajemen Produk (SKU unik, nama, kategori, satuan, harga beli, harga jual, stok minimum, estimasi tanggal kedaluwarsa terdekat).
+  - Manajemen Produk (SKU unik, nama, kategori, satuan, harga beli wajib, harga jual, stok minimum, estimasi tanggal kedaluwarsa terdekat).
   - Manajemen Kategori, Satuan (contoh: butir, pack, box), dan Supplier.
   - Proteksi *Soft Deletes* pada data produk agar riwayat mutasi masa lalu tetap utuh.
   - Validasi integritas: Kategori dan Satuan yang masih digunakan oleh produk tidak dapat dihapus.
@@ -60,6 +63,7 @@ Aplikasi ini dibangun menggunakan arsitektur modern **Laravel 12**, **MariaDB/My
 - **Manajemen Pengguna (User Management)**:
   - Kelola akun pengguna untuk peran Admin, Petugas, dan Pemilik.
   - Fitur reset password langsung oleh Admin (password baru di-hash bcrypt).
+  - Lupa password mandiri via email: tautan reset bertoken sekali pakai, berlaku 60 menit, dan respons yang sama untuk email terdaftar maupun tidak (daftar akun tidak bisa ditebak).
   - Mekanisme proteksi keamanan: Admin tidak dapat menghapus atau menonaktifkan akun miliknya sendiri, serta sistem mencegah penonaktifan akun Admin terakhir.
   - Akun yang dinonaktifkan langsung dikeluarkan pada permintaan berikutnya (middleware `EnsureUserIsActive`), tidak menunggu sesi kedaluwarsa.
 
@@ -88,13 +92,13 @@ Aplikasi ini dibangun menggunakan arsitektur modern **Laravel 12**, **MariaDB/My
 | **Otorisasi / RBAC** | Enum `App\Enums\Role` + middleware `EnsureRole` + `ProductPolicy` | Dibangun tanpa paket pihak ketiga; aturan peran terpusat di enum sehingga mudah ditelusuri |
 | **Styling & CSS** | Tailwind CSS v4 via Vite | Responsif (desktop, tablet, mobile), tema amber |
 | **Interaktivitas UI** | Alpine.js (via npm) | Navigasi responsif, modal interaktif, widget chatbot |
-| **Visualisasi Grafik** | Chart.js 4.4 (via CDN jsDelivr) | Grafik stok vs batas minimum, tren 30 hari, top terlaris |
-| **Ikon UI** | Font Awesome 6.4 (via CDN cdnjs) | Ikon antarmuka modern |
+| **Visualisasi Grafik** | Chart.js 4 (via npm, dibundel Vite) | Grafik stok vs batas minimum, tren 30 hari, top terlaris |
+| **Ikon & Font** | Font Awesome 6 & Plus Jakarta Sans (via npm, dibundel Vite) | Ikon dan tipografi tanpa CDN |
 | **Ekspor PDF** | `barryvdh/laravel-dompdf` | Format kop resmi, tabel presisi, ramah cetak A4 |
 | **Ekspor Excel** | `maatwebsite/excel` | Spreadsheet berekstensi .xlsx dengan format angka rapi |
-| **Testing** | PHPUnit / Laravel Test | 79 test (291 assertions, lulus 100%) |
+| **Testing** | PHPUnit / Laravel Test | 92 test (336 assertions, lulus 100%) + uji konkurensi MySQL |
 
-> **Catatan**: Chart.js, Font Awesome, dan font Plus Jakarta Sans dimuat dari CDN, sehingga grafik dan ikon membutuhkan koneksi internet. Lupa password ditangani oleh Admin melalui menu Manajemen Pengguna (tidak ada reset via email).
+> **Catatan**: Seluruh aset (grafik, ikon, font) dibundel lokal oleh Vite, sehingga aplikasi tampil lengkap tanpa koneksi internet. Pengiriman email lupa password membutuhkan konfigurasi `MAIL_*` di `.env`; dengan `MAIL_MAILER=log`, email ditulis ke `storage/logs/laravel.log`.
 
 ---
 
@@ -250,16 +254,35 @@ Aplikasi dilengkapi dengan rangkaian pengujian fitur (*Feature Tests*) lengkap y
 php artisan test
 ```
 
-### Ringkasan Cakupan Test (79 Tests, 291 Assertions - 100% Lulus):
-- `AuthenticationTest`: Login dengan username, penolakan password salah, pengalihan tamu ke halaman login, logout, penolakan akun nonaktif saat login maupun saat sesi masih aktif, dan pesan lupa password (hubungi Admin).
+### Ringkasan Cakupan Test (92 Tests, 336 Assertions - 100% Lulus):
+- `AuthenticationTest`: Login dengan username, penolakan password salah, pengalihan tamu ke halaman login, logout, penolakan akun nonaktif saat login maupun saat sesi masih aktif, serta tautan lupa password di halaman login.
 - `RolePermissionTest`: Pembatasan hak akses Admin, Petugas, dan Pemilik; proteksi akun admin dari tindakan hapus/nonaktif diri sendiri.
-- `MasterDataTest`: Validasi keunikan SKU, harga tidak negatif, pencegahan penghapusan master data yang berelasi, serta mekanisme *soft delete*.
+- `MasterDataTest`: Validasi keunikan SKU, harga tidak negatif, harga beli wajib, pencegahan penghapusan master data yang berelasi, mekanisme *soft delete*, penguncian satuan produk yang sudah dimutasi, dan penolakan mutasi pada produk terhapus.
 - `StockMovementTest`: Penambahan stok saat barang masuk, pengurangan stok saat barang keluar, penolakan transaksi jika stok tidak mencukupi, penghitungan selisih stock opname, penolakan input tanggal masa depan.
-- `DashboardTest`: Otorisasi tampilan nilai persediaan aset (khusus Admin & Pemilik), verifikasi banner stok menipis, banner kedaluwarsa, pemisahan agregasi masuk vs keluar hari ini, isi data grafik tren 30 hari, serta View Composer lonceng header.
+- `DashboardTest`: Otorisasi tampilan nilai persediaan aset (khusus Admin & Pemilik), verifikasi banner stok menipis, banner kedaluwarsa, pemisahan agregasi masuk vs keluar hari ini, isi data grafik tren 30 hari, nilai persediaan yang tidak menaksir produk tanpa harga beli, serta View Composer lonceng header.
 - `ReportTest`: Filter laporan per mutasi/produk/petugas, verifikasi ekspor PDF, ekspor Excel, ekspor CSV dengan *escaping* tanda kutip, dan rekonsiliasi kartu stok.
 - `UserManagementTest`: Pembuatan user baru, reset password oleh admin, serta pencegahan menonaktifkan akun admin terakhir.
 - `ChatbotTest`: Akses terotentikasi, eksekusi tool calling baca data riil, logging percakapan ke `chat_logs`, *rate limiting*, pengujian bahwa chatbot tidak pernah memodifikasi stok, alur tool calling Gemini (disimulasikan dengan `Http::fake`, API key lewat header), fallback saat API gagal, serta error internal yang tidak dibocorkan ke klien.
 - `SeederTest`: Data demo konsisten (stok produk = snapshot mutasi terakhir = saldo akhir kartu stok) dan seeder aman dijalankan berulang kali.
+- `PasswordResetTest`: Pengiriman tautan reset, respons identik untuk email tidak terdaftar, isi email berbahasa Indonesia, penggantian password dengan token valid, token sekali pakai, penolakan token palsu, dan aturan panjang password.
+
+### Uji Konkurensi (Race Condition)
+
+Test PHPUnit memakai SQLite yang mengabaikan `lockForUpdate()`, sehingga ketahanan terhadap *race condition* dibuktikan terpisah di MySQL/MariaDB. Perintah berikut membuat produk uji sementara (stok 50), lalu menjalankan 10 proses PHP yang **serentak** mencoba mengeluarkan 10 butir. Produk uji beserta riwayatnya dihapus otomatis setelah selesai.
+
+```bash
+php artisan stok:uji-konkurensi                # StockService (transaksi + lockForUpdate)
+php artisan stok:uji-konkurensi --tanpa-kunci  # pembanding: baca-cek-tulis tanpa kunci
+```
+
+Kedua mode diberi jeda buatan yang sama (`--delay`, bawaan 200 ms) di antara membaca dan menulis stok. Hasil pada MariaDB 10.4:
+
+| Pemeriksaan | Dengan `lockForUpdate` | Tanpa kunci |
+|---|:---:|:---:|
+| Proses berhasil / ditolak | 5 / 5 | 10 / 0 |
+| Total barang tercatat keluar | 50 butir | 100 butir |
+| Stok akhir di database | 0 | 40 |
+| Kesimpulan | **Konsisten** | **90 butir "hilang"** (*lost update*) |
 
 ---
 
@@ -440,11 +463,12 @@ CACHE_STORE=database
 
 ```text
 ├── app/
+│   ├── Console/Commands/      # stok:uji-konkurensi (bukti race condition di MySQL) & pekerjanya
 │   ├── Enums/                 # Role (ADMIN, PETUGAS, OWNER) & LogType (MASUK, KELUAR, PENYESUAIAN)
 │   ├── Exports/               # StockMovementExport & StockCardExport (Excel)
 │   ├── Http/
 │   │   ├── Controllers/       # Dashboard, Product, Category, Unit, Supplier, StockMovement, Report, User, Chatbot
-│   │   │   └── Auth/          # LoginController (login username, rate limit, logout)
+│   │   │   └── Auth/          # LoginController (login, rate limit, logout) & PasswordResetController (lupa password)
 │   │   ├── Middleware/        # EnsureRole (alias "role") & EnsureUserIsActive
 │   │   └── Requests/          # Form Requests dengan validasi ketat
 │   ├── Models/                # Product, StockLog, Category, Unit, Supplier, User, ChatLog
@@ -457,14 +481,15 @@ CACHE_STORE=database
 │   ├── migrations/            # Skema tabel: products, stock_logs, categories, units, suppliers, chat_logs
 │   └── seeders/               # DatabaseSeeder (user demo, master data, mutasi awal via StockService)
 ├── docs/prototype/            # Prototipe HTML lama sebagai referensi tampilan
+├── lang/                      # id.json (terjemahan email reset password)
 ├── resources/
 │   ├── css/                   # app.css (Tailwind CSS v4)
-│   ├── js/                    # app.js (Alpine.js & konfirmasi hapus)
+│   ├── js/                    # app.js (Alpine.js, ikon, font) & charts.js (Chart.js khusus dashboard)
 │   └── views/
-│       ├── auth/              # Halaman login bernuansa amber
+│       ├── auth/              # Login, lupa password, dan buat password baru
 │       ├── categories/        # Tampilan CRUD kategori
 │       ├── components/        # Blade components (nav-link, chatbot-widget, role-banner, stat-card)
-│       ├── layouts/           # Layout utama aplikasi dengan sidebar & header responsif
+│       ├── layouts/           # app (sidebar & header responsif) dan guest (halaman tamu)
 │       ├── products/          # Tampilan katalog produk, filter, dan pagination
 │       ├── reports/           # Laporan mutasi, kartu stok, dan template PDF
 │       ├── stock/             # Form Barang Masuk, Barang Keluar, dan Stock Opname
@@ -474,9 +499,9 @@ CACHE_STORE=database
 │       └── dashboard.blade.php
 ├── routes/
 │   ├── console.php            # Perintah artisan konsol
-│   └── web.php                # Seluruh rute web (login, auth & role middleware)
+│   └── web.php                # Seluruh rute web (login, lupa password, auth & role middleware)
 └── tests/
-    ├── Feature/               # 9 Feature Test Suites (78 pengujian)
+    ├── Feature/               # 10 Feature Test Suites (91 pengujian)
     └── Unit/                  # ExampleTest
 ```
 

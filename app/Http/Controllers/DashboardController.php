@@ -25,13 +25,14 @@ class DashboardController extends Controller
             ->map(fn ($total, $unit) => number_format($total, 0, ',', '.') . ' ' . $unit)
             ->join(' · ');
 
-        // 2. Nilai Persediaan (Stok x Harga Beli, khusus Admin & Pemilik)
+        // 2. Nilai Persediaan (Stok x Harga Beli riil, khusus Admin & Pemilik).
+        // Produk tanpa harga beli tidak ditaksir; jumlahnya ditampilkan sebagai peringatan.
         $canViewInventoryValue = in_array($user?->role, [Role::ADMIN, Role::OWNER], true);
         $totalInventoryValue = 0;
+        $missingPurchasePriceCount = 0;
         if ($canViewInventoryValue) {
-            $totalInventoryValue = (int) $products->sum(function ($p) {
-                return max(0, (int) $p->stock) * $p->effective_purchase_price;
-            });
+            $totalInventoryValue = (int) $products->sum(fn ($p) => max(0, (int) $p->stock) * $p->purchase_price);
+            $missingPurchasePriceCount = $products->filter->isMissingPurchasePrice()->count();
         }
 
         // 3. Mutasi Hari Ini (DIPISAH: Masuk vs Keluar)
@@ -123,6 +124,7 @@ class DashboardController extends Controller
             'totalStockDisplay' => $totalStockDisplay ?: '0 butir',
             'canViewInventoryValue' => $canViewInventoryValue,
             'totalInventoryValue' => $totalInventoryValue,
+            'missingPurchasePriceCount' => $missingPurchasePriceCount,
             'masukTodayDisplay' => $masukTodayDisplay,
             'keluarTodayDisplay' => $keluarTodayDisplay,
             'lowStockItems' => $lowStockItems,

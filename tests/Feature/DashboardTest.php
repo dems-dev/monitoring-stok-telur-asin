@@ -53,6 +53,21 @@ class DashboardTest extends TestCase
             ->assertDontSee('Nilai Persediaan');
     }
 
+    public function test_nilai_persediaan_tidak_menaksir_produk_tanpa_harga_beli(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        Product::factory()->create(['stock' => 100, 'purchase_price' => 3000]);
+        // Data lama tanpa harga beli: dulu ditaksir 80% harga jual, sekarang tidak dihitung.
+        Product::factory()->create(['stock' => 50, 'price' => 5000, 'purchase_price' => 0]);
+
+        $response = $this->actingAs($admin)->get('/dashboard')->assertOk();
+
+        $this->assertSame(300000, $response->viewData('totalInventoryValue'));
+        $response->assertSee('Rp 300.000')
+            ->assertSee('1 produk belum ada harga beli (tidak dihitung)');
+    }
+
     public function test_banner_stok_menipis_tampil_saat_ada_produk_mencapai_batas_minimum(): void
     {
         $petugas = User::factory()->create();

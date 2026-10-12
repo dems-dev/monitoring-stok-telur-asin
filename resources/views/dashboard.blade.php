@@ -13,7 +13,8 @@
 
         @if ($canViewInventoryValue)
             <x-stat-card label="Nilai Persediaan" :value="'Rp ' . number_format($totalInventoryValue, 0, ',', '.')"
-                         icon="fa-wallet" tone="indigo" />
+                         icon="fa-wallet" tone="indigo"
+                         :note="$missingPurchasePriceCount > 0 ? $missingPurchasePriceCount . ' produk belum ada harga beli (tidak dihitung)' : null" />
         @endif
 
         <x-stat-card label="Masuk Hari Ini" :value="$masukTodayDisplay"
@@ -188,9 +189,15 @@
     </div>
 @endsection
 
+@push('head')
+    @vite('resources/js/charts.js')
+@endpush
+
 @push('scripts')
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script>
+    // Modul Vite (charts.js) dijalankan setelah skrip inline ini dibaca, tetapi
+    // selalu sebelum DOMContentLoaded; jadi window.Chart dipakai di dalam listener.
+    document.addEventListener('DOMContentLoaded', () => {
         const chartsData = @json($charts);
 
         // 1. Grafik Stok Fisik vs Batas Minimum (Bar + Line threshold)
@@ -306,5 +313,6 @@
                 }
             }
         });
+    });
     </script>
 @endpush

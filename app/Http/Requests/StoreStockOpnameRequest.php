@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreStockOpnameRequest extends FormRequest
 {
@@ -15,7 +16,8 @@ class StoreStockOpnameRequest extends FormRequest
     {
         return [
             'logged_date' => ['required', 'date', 'before_or_equal:today'],
-            'product_id' => ['required', 'integer', 'exists:products,id'],
+            // withoutTrashed: produk yang sudah dihapus lunak tidak boleh dimutasi lagi.
+            'product_id' => ['required', 'integer', Rule::exists('products', 'id')->withoutTrashed()],
             'stok_fisik' => ['required', 'integer', 'min:0', 'max:1000000'],
             'alasan' => ['required', 'string', 'min:3', 'max:1000'],
         ];
@@ -37,6 +39,7 @@ class StoreStockOpnameRequest extends FormRequest
             'logged_date.before_or_equal' => 'Tanggal opname tidak boleh di masa depan.',
             'stok_fisik.min' => 'Stok fisik riil tidak boleh bernilai negatif.',
             'alasan.required' => 'Alasan penyesuaian wajib diisi untuk catatan audit opname.',
+            'product_id.exists' => 'Varian telur tidak ditemukan atau sudah dihapus.',
         ];
     }
 }

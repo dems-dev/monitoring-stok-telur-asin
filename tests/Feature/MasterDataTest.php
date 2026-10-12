@@ -200,6 +200,7 @@ class MasterDataTest extends TestCase
             'category_id' => $category->id,
             'unit_id' => $unit->id,
             'price' => 5000,
+            'purchase_price' => 4000,
             'min_stock' => 20,
             'stock' => 100, // input manual stock harus diabaikan/dipaksa 0
         ]);
@@ -243,5 +244,104 @@ class MasterDataTest extends TestCase
             'source_or_target' => 'Peternakan Jaya Brebes',
             'amount' => 30,
         ]);
+    }
+
+    /** @return array<string, mixed> */
+    private function productPayload(Product $product, array $overrides = []): array
+    {
+        return array_merge([
+            'sku' => $product->sku,
+            'name' => $product->name,
+            'category_id' => $product->category_id,
+            'unit_id' => $product->unit_id,
+            'price' => $product->price,
+            'purchase_price' => $product->purchase_price,
+            'min_stock' => $product->min_stock,
+        ], $overrides);
+    }
+
+    public function test_satuan_tidak_bisa_diubah_bila_produk_sudah_memiliki_mutasi(): void
+    {
+        $pack = Unit::factory()->create(['name' => 'lusin']);
+        $product = Product::factory()->create();
+        StockLog::factory()->for($product)->create();
+
+        $this->actingAs($this->admin)
+            ->put(route('products.update', $product), $this->productPayload($product, ['unit_id' => $pack->id]))
+            ->assertSessionHasErrors('unit_id');
+
+        $this->assertNotSame($pack->id, $product->fresh()->unit_id);
+
+        // Field lain tetap bisa diubah selama satuan tidak diganti.
+        $this->actingAs($this->admin)
+            ->put(route('products.update', $product), $this->productPayload($product, ['name' => 'Nama Baru']))
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame('Nama Baru', $product->fresh()->name);
+    }
+
+    public function test_satuan_masih_bisa_diubah_bila_produk_belum_pernah_dimutasi(): void
+    {
+        $pack = Unit::factory()->create(['name' => 'lusin']);
+        $product = Product::factory()->create();
+
+        $this->actingAs($this->admin)
+            ->put(route('products.update', $product), $this->productPayload($product, ['unit_id' => $pack->id]))
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame($pack->id, $product->fresh()->unit_id);
+    }
+
+    public function test_form_edit_mengunci_pilihan_satuan_bila_sudah_ada_mutasi(): void
+    {
+        $product = Product::factory()->create();
+        StockLog::factory()->for($product)->create();
+
+        $this->actingAs($this->admin)
+            ->get(route('products.edit', $product))
+            ->assertOk()
+            ->assertSee('Terkunci: produk sudah memiliki riwayat mutasi.');
+    }
+
+    public function test_harga_beli_wajib_diisi_saat_menambah_produk(): void
+    {
+        $product = Product::factory()->make(['sku' => 'TLR-TANPA-MODAL']);
+
+        foreach ([null, 0] as $hargaBeli) {
+            $this->actingAs($this->admin)
+                ->post(route('products.store'), $this->productPayload($product, ['purchase_price' => $hargaBeli]))
+                ->assertSessionHasErrors('purchase_price');
+        }
+
+        $this->assertDatabaseMissing('products', ['sku' => 'TLR-TANPA-MODAL']);
+    }
+
+    public function test_produk_yang_sudah_dihapus_tidak_bisa_dimutasi(): void
+    {
+        $product = Product::factory()->create(['stock' => 50]);
+        $product->delete();
+
+        $payload = [
+            'logged_date' => today()->toDateString(),
+            'product_id' => $product->id,
+            'amount' => 5,
+            'source_or_target' => 'Pelanggan',
+            'status' => 'Terjual',
+        ];
+
+        $this->actingAs($this->petugas)
+            ->post(route('stock.keluar.store'), $payload)
+            ->assertSessionHasErrors(['product_id' => 'Varian telur tidak ditemukan atau sudah dihapus.']);
+
+        $this->actingAs($this->petugas)
+            ->post(route('stock.opname.store'), [
+                'logged_date' => today()->toDateString(),
+                'product_id' => $product->id,
+                'stok_fisik' => 10,
+                'alasan' => 'Hitung ulang',
+            ])
+            ->assertSessionHasErrors('product_id');
+
+        $this->assertSame(0, StockLog::count());
     }
 }

@@ -1,4 +1,4 @@
-@props(['label', 'value', 'unit' => null, 'icon', 'tone' => 'slate'])
+@props(['label', 'value', 'unit' => null, 'icon', 'tone' => 'slate', 'note' => null])
 
 @php
     $tones = [
@@ -21,6 +21,11 @@
                     <span class="text-xs font-normal text-slate-500">{{ $unit }}</span>
                 @endif
             </div>
+            @if ($note)
+                <div class="mt-1 text-[11px] font-medium text-rose-600">
+                    <i class="fa-solid fa-triangle-exclamation mr-0.5"></i> {{ $note }}
+                </div>
+            @endif
         </div>
         <div class="w-10 h-10 rounded-xl flex items-center justify-center text-lg {{ $tones[$tone] }}">
             <i class="fa-solid {{ $icon }}"></i>

@@ -56,6 +56,7 @@ class ProductController extends Controller implements HasMiddleware
             'product' => new Product(),
             'categories' => \App\Models\Category::orderBy('name')->get(),
             'units' => \App\Models\Unit::orderBy('name')->get(),
+            'unitLocked' => false,
         ]);
     }
 
@@ -77,6 +78,7 @@ class ProductController extends Controller implements HasMiddleware
             'product' => $product,
             'categories' => \App\Models\Category::orderBy('name')->get(),
             'units' => \App\Models\Unit::orderBy('name')->get(),
+            'unitLocked' => $product->hasMovements(),
         ]);
     }
 

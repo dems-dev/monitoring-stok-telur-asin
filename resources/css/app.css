@@ -8,14 +8,6 @@
 @theme {
     --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
-
-    /* Skala warna brand dari prototipe. */
-    --color-brand-50: #f0fdf4;
-    --color-brand-100: #dcfce7;
-    --color-brand-500: #22c55e;
-    --color-brand-600: #16a34a;
-    --color-brand-700: #15803d;
-    --color-brand-800: #166534;
 }
 
 /* Gaya cetak laporan, dipindahkan dari prototipe. */

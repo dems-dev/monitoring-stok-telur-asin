@@ -75,9 +75,15 @@ class Product extends Model
             ->where('nearest_expiry_date', '<=', today()->addDays($days));
     }
 
-    /** Nilai harga beli riil atau perkiraan rasio jika belum ditentukan. */
-    public function getEffectivePurchasePriceAttribute(): int
+    /** Produk sudah pernah dimutasi (masuk / keluar / opname). */
+    public function hasMovements(): bool
     {
-        return $this->purchase_price > 0 ? $this->purchase_price : (int) round($this->price * 0.8);
+        return $this->stockLogs()->exists();
+    }
+
+    /** Harga beli belum diisi, sehingga nilai persediaannya tidak bisa dihitung. */
+    public function isMissingPurchasePrice(): bool
+    {
+        return $this->purchase_price <= 0;
     }
 }

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProductController;
@@ -16,6 +17,15 @@ Route::redirect('/', '/dashboard');
 Route::middleware('guest')->group(function (): void {
     Route::get('/login', [LoginController::class, 'create'])->name('login');
     Route::post('/login', [LoginController::class, 'store']);
+
+    // Lupa password via email. Nama rute "password.reset" dipakai notifikasi
+    // ResetPassword bawaan Laravel untuk menyusun tautan di email.
+    Route::get('/lupa-password', [PasswordResetController::class, 'create'])->name('password.request');
+    Route::post('/lupa-password', [PasswordResetController::class, 'store'])
+        ->middleware('throttle:5,1')
+        ->name('password.email');
+    Route::get('/reset-password/{token}', [PasswordResetController::class, 'edit'])->name('password.reset');
+    Route::post('/reset-password', [PasswordResetController::class, 'update'])->name('password.update');
 });
 
 Route::middleware('auth')->group(function (): void {

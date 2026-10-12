@@ -98,12 +98,13 @@ class AuthenticationTest extends TestCase
         $this->assertGuest();
     }
 
-    public function test_halaman_login_menampilkan_pesan_lupa_password_hubungi_admin(): void
+    public function test_halaman_login_menautkan_lupa_password_dan_alternatif_hubungi_admin(): void
     {
         $response = $this->get('/login');
 
         $response->assertOk();
         $response->assertSee('Lupa password?');
+        $response->assertSee(route('password.request'));
         $response->assertSee('Hubungi admin');
     }
 }

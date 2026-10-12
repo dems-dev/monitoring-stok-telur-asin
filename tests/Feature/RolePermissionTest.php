@@ -84,6 +84,7 @@ class RolePermissionTest extends TestCase
             'category_id' => $category->id,
             'unit_id' => $unit->id,
             'price' => 3500,
+            'purchase_price' => 2800,
             'min_stock' => 5,
         ])->assertRedirect(route('products.index'));
 

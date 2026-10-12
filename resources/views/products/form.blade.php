@@ -46,8 +46,12 @@
 
                 <div>
                     <label for="unit_id" class="block text-xs font-semibold text-slate-600 mb-1">Satuan (Unit)</label>
-                    <select id="unit_id" name="unit_id" required
-                            class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-amber-500">
+                    @if ($unitLocked)
+                        {{-- Select disabled tidak ikut terkirim; nilainya tetap divalidasi di ProductRequest. --}}
+                        <input type="hidden" name="unit_id" value="{{ $product->unit_id }}">
+                    @endif
+                    <select id="unit_id" @unless ($unitLocked) name="unit_id" @endunless required @disabled($unitLocked)
+                            class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-amber-500 disabled:opacity-60 disabled:cursor-not-allowed">
                         <option value="">-- Pilih Satuan --</option>
                         @foreach ($units as $unit)
                             <option value="{{ $unit->id }}" @selected(old('unit_id', $product->unit_id) == $unit->id)>
@@ -55,6 +59,11 @@
                             </option>
                         @endforeach
                     </select>
+                    @if ($unitLocked)
+                        <p class="mt-1 text-[11px] text-slate-500">
+                            <i class="fa-solid fa-lock mr-0.5"></i> Terkunci: produk sudah memiliki riwayat mutasi.
+                        </p>
+                    @endif
                     @error('unit_id') <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
                 </div>
             </div>
@@ -78,11 +87,11 @@
 
                 <div>
                     <label for="purchase_price" class="block text-xs font-semibold text-slate-600 mb-1">
-                        Harga Beli / Modal (Rp) <span class="text-slate-400 font-normal">(opsional)</span>
+                        Harga Beli / Modal (Rp)
                     </label>
-                    <input id="purchase_price" name="purchase_price" type="number" min="0" step="1"
-                           value="{{ old('purchase_price', $product->purchase_price ?? 0) }}"
-                           placeholder="0"
+                    <input id="purchase_price" name="purchase_price" type="number" min="1" step="1" required
+                           value="{{ old('purchase_price', $product->purchase_price ?: null) }}"
+                           placeholder="Contoh: 2800"
                            class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-amber-500">
                     @error('purchase_price') <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
                 </div>

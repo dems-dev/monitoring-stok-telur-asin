@@ -42,7 +42,8 @@ class StoreStockMovementRequest extends FormRequest
     {
         return [
             'logged_date' => ['required', 'date', 'before_or_equal:today'],
-            'product_id' => ['required', 'integer', 'exists:products,id'],
+            // withoutTrashed: produk yang sudah dihapus lunak tidak boleh dimutasi lagi.
+            'product_id' => ['required', 'integer', Rule::exists('products', 'id')->withoutTrashed()],
             'supplier_id' => ['nullable', 'integer', 'exists:suppliers,id'],
             'amount' => ['required', 'integer', 'min:1', 'max:1000000'],
             'source_or_target' => ['required', 'string', 'max:255'],
@@ -68,6 +69,7 @@ class StoreStockMovementRequest extends FormRequest
         return [
             'logged_date.before_or_equal' => 'Tanggal tidak boleh melewati hari ini.',
             'amount.min' => 'Jumlah minimal 1 butir.',
+            'product_id.exists' => 'Varian telur tidak ditemukan atau sudah dihapus.',
         ];
     }
 }
