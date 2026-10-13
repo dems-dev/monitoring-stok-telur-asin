@@ -9,14 +9,15 @@ Aplikasi ini dibangun menggunakan arsitektur modern **Laravel 12**, **MariaDB/My
 ## Daftar Isi
 
 1. [Fitur Utama](#fitur-utama)
-2. [Tech Stack](#tech-stack)
-3. [Matriks Hak Akses (Role-Based Access Control)](#matriks-hak-akses-role-based-access-control)
-4. [Alur Transaksi dan Integritas Stok](#alur-transaksi-dan-integritas-stok)
-5. [Akun Demo](#akun-demo)
-6. [Panduan Instalasi Lokal](#panduan-instalasi-lokal)
-7. [Pengujian Otomatis (Testing)](#pengujian-otomatis-testing)
-8. [Panduan Deploy ke Server Produksi (cPanel & VPS)](#panduan-deploy-ke-server-produksi-cpanel--vps)
-9. [Struktur Direktori Proyek](#struktur-direktori-proyek)
+2. [Tangkapan Layar](#tangkapan-layar)
+3. [Tech Stack](#tech-stack)
+4. [Matriks Hak Akses (Role-Based Access Control)](#matriks-hak-akses-role-based-access-control)
+5. [Alur Transaksi dan Integritas Stok](#alur-transaksi-dan-integritas-stok)
+6. [Akun Demo](#akun-demo)
+7. [Panduan Instalasi Lokal](#panduan-instalasi-lokal)
+8. [Pengujian Otomatis (Testing)](#pengujian-otomatis-testing)
+9. [Panduan Deploy ke Server Produksi (cPanel & VPS)](#panduan-deploy-ke-server-produksi-cpanel--vps)
+10. [Struktur Direktori Proyek](#struktur-direktori-proyek)
 
 ---
 
@@ -79,6 +80,32 @@ Aplikasi ini dibangun menggunakan arsitektur modern **Laravel 12**, **MariaDB/My
   - Dilengkapi *smart local fallback* jika API key LLM eksternal tidak dikonfigurasi atau panggilan API gagal.
   - API key dikirim melalui header (bukan URL), dan detail error internal hanya dicatat di log server, tidak dikirim ke browser.
   - Pencatatan riwayat percakapan pada tabel `chat_logs` dan proteksi *Rate Limiting* (maksimal 20 permintaan/menit per pengguna).
+
+---
+
+## Tangkapan Layar
+
+Diambil dari data demo hasil `php artisan migrate:fresh --seed`.
+
+| Halaman Login | Dashboard (Admin) |
+|---|---|
+| ![Halaman login](docs/screenshots/login.png) | ![Dashboard admin](docs/screenshots/dashboard.png) |
+
+| Master Data Produk | Barang Masuk |
+|---|---|
+| ![Master data produk](docs/screenshots/produk.png) | ![Form barang masuk](docs/screenshots/barang-masuk.png) |
+
+| Barang Keluar | Stock Opname |
+|---|---|
+| ![Form barang keluar](docs/screenshots/barang-keluar.png) | ![Form stock opname](docs/screenshots/stock-opname.png) |
+
+| Riwayat & Laporan | Kartu Stok per Produk |
+|---|---|
+| ![Riwayat dan laporan](docs/screenshots/laporan.png) | ![Kartu stok](docs/screenshots/kartu-stok.png) |
+
+| Kelola Pengguna | Dashboard di HP (Pemilik) |
+|---|---|
+| ![Kelola pengguna](docs/screenshots/pengguna.png) | <img src="docs/screenshots/dashboard-mobile.png" alt="Dashboard versi HP" width="280"> |
 
 ---
 
@@ -480,7 +507,9 @@ CACHE_STORE=database
 │   ├── factories/             # Factory pengujian
 │   ├── migrations/            # Skema tabel: products, stock_logs, categories, units, suppliers, chat_logs
 │   └── seeders/               # DatabaseSeeder (user demo, master data, mutasi awal via StockService)
-├── docs/prototype/            # Prototipe HTML lama sebagai referensi tampilan
+├── docs/
+│   ├── prototype/             # Prototipe HTML lama sebagai referensi tampilan
+│   └── screenshots/           # Tangkapan layar untuk README
 ├── lang/                      # id.json (terjemahan email reset password)
 ├── resources/
 │   ├── css/                   # app.css (Tailwind CSS v4)

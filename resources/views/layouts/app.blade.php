@@ -42,7 +42,7 @@
                 <div class="h-6 w-px bg-slate-200 hidden sm:block"></div>
 
                 <div class="flex items-center space-x-3 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200">
-                    <div class="w-8 h-8 rounded-lg text-white flex items-center justify-center text-xs font-bold shadow-sm {{ $role->color() }}">
+                    <div class="w-8 h-8 shrink-0 rounded-lg text-white flex items-center justify-center text-[10px] font-bold tracking-tight shadow-sm {{ $role->color() }}">
                         {{ Str::substr($role->value, 0, 3) }}
                     </div>
                     <div class="hidden sm:block text-left">
