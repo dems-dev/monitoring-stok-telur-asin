@@ -113,7 +113,7 @@ Diambil dari data demo hasil `php artisan migrate:fresh --seed`.
 
 | Komponen | Teknologi | Keterangan |
 |---|---|---|
-| **Framework Backend** | Laravel 12 (PHP 8.3 / 8.4) | Arsitektur MVC, Form Request Validation, Eloquent ORM |
+| **Framework Backend** | Laravel 12 (PHP 8.4) | Arsitektur MVC, Form Request Validation, Eloquent ORM |
 | **Database** | MariaDB 10.4+ / MySQL 8.0+ | Transaksi ACID, InnoDB engine, Foreign Keys |
 | **Autentikasi** | `LoginController` kustom (berbasis username) | Login rate limiter (5 percobaan per username + IP), BCrypt hashing, regenerasi sesi, penolakan akun nonaktif |
 | **Otorisasi / RBAC** | Enum `App\Enums\Role` + middleware `EnsureRole` + `ProductPolicy` | Dibangun tanpa paket pihak ketiga; aturan peran terpusat di enum sehingga mudah ditelusuri |
@@ -349,15 +349,16 @@ CACHE_STORE=database
 ### 2. Panduan Deploy ke Railway (Rekomendasi)
 
 Repositori ini sudah disiapkan untuk [Railway](https://railway.com):
-- `nixpacks.toml` membangun aset Vite (`npm run build`) dan mengarahkan *document root* ke folder `public`.
+- `composer.json` mensyaratkan PHP `^8.4` serta ekstensi `gd`, `zip`, dan `pdo_mysql`. Builder bawaan Railway (**Railpack**) membaca syarat ini untuk memilih versi PHP dan memasang ekstensi yang dibutuhkan ekspor PDF/Excel dan koneksi MySQL.
+- Railpack otomatis mendeteksi Laravel: menjalankan `npm run build`, `config:cache`, `route:cache`, `view:cache`, dan menyajikan folder `public`. Berkas `nixpacks.toml` hanya dipakai bila builder diganti ke Nixpacks.
 - `config/database.php` otomatis membaca variabel bawaan layanan MySQL Railway (`MYSQL_URL`, `MYSQLHOST`, `MYSQLPORT`, dan seterusnya) bila `DB_*` tidak diisi.
 
 1. **Buat Proyek dan Database**:
    - Di dashboard Railway pilih **New Project → Deploy from GitHub repo**, lalu pilih repositori ini.
    - Pada proyek yang sama klik **+ New → Database → MySQL**.
 
-2. **Pastikan Builder Nixpacks**:
-   Buka layanan aplikasi → **Settings → Build → Builder**, lalu pilih **Nixpacks**. Berkas `nixpacks.toml` hanya dibaca oleh builder Nixpacks.
+2. **Biarkan Builder Railpack (Bawaan)**:
+   Tidak perlu mengubah **Settings → Build → Builder**. Pastikan log build menampilkan `php │ 8.4.x`; bila masih 8.2, berarti perubahan `composer.json` belum ter-*push*.
 
 3. **Isi Variables pada Layanan Aplikasi**:
    ```env
@@ -462,7 +463,7 @@ Setelah itu, setiap `git push` ke branch `master` akan memicu build dan deploy u
 ### 4. Panduan Deploy ke VPS Linux (Ubuntu / Debian + Nginx)
 
 1. **Persiapan Server**:
-   Pasang paket yang diperlukan (Nginx, PHP 8.3/8.4-FPM, MariaDB, Composer, Git):
+   Pasang paket yang diperlukan (Nginx, PHP 8.4-FPM, MariaDB, Composer, Git):
    ```bash
    sudo apt update
    sudo apt install -y nginx mariadb-server php8.4-fpm php8.4-mysql php8.4-mbstring \
