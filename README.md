@@ -16,7 +16,7 @@ Aplikasi ini dibangun menggunakan arsitektur modern **Laravel 12**, **MariaDB/My
 6. [Akun Demo](#akun-demo)
 7. [Panduan Instalasi Lokal](#panduan-instalasi-lokal)
 8. [Pengujian Otomatis (Testing)](#pengujian-otomatis-testing)
-9. [Panduan Deploy ke Server Produksi (cPanel & VPS)](#panduan-deploy-ke-server-produksi-cpanel--vps)
+9. [Panduan Deploy ke Server Produksi (Railway, cPanel & VPS)](#panduan-deploy-ke-server-produksi-railway-cpanel--vps)
 10. [Struktur Direktori Proyek](#struktur-direktori-proyek)
 
 ---
@@ -313,7 +313,7 @@ Kedua mode diberi jeda buatan yang sama (`--delay`, bawaan 200 ms) di antara mem
 
 ---
 
-## Panduan Deploy ke Server Produksi (cPanel & VPS)
+## Panduan Deploy ke Server Produksi (Railway, cPanel & VPS)
 
 ### 1. Rekomendasi Pengaturan Produksi pada Berkas `.env`
 Saat mengunggah ke hosting atau VPS, pastikan pengaturan keamanan berikut diterapkan:
@@ -346,7 +346,77 @@ CACHE_STORE=database
 
 ---
 
-### 2. Panduan Deploy ke cPanel (Shared Hosting)
+### 2. Panduan Deploy ke Railway (Rekomendasi)
+
+Repositori ini sudah disiapkan untuk [Railway](https://railway.com):
+- `nixpacks.toml` membangun aset Vite (`npm run build`) dan mengarahkan *document root* ke folder `public`.
+- `config/database.php` otomatis membaca variabel bawaan layanan MySQL Railway (`MYSQL_URL`, `MYSQLHOST`, `MYSQLPORT`, dan seterusnya) bila `DB_*` tidak diisi.
+
+1. **Buat Proyek dan Database**:
+   - Di dashboard Railway pilih **New Project → Deploy from GitHub repo**, lalu pilih repositori ini.
+   - Pada proyek yang sama klik **+ New → Database → MySQL**.
+
+2. **Pastikan Builder Nixpacks**:
+   Buka layanan aplikasi → **Settings → Build → Builder**, lalu pilih **Nixpacks**. Berkas `nixpacks.toml` hanya dibaca oleh builder Nixpacks.
+
+3. **Isi Variables pada Layanan Aplikasi**:
+   ```env
+   APP_NAME="SIM-STOK Telur Asin"
+   APP_ENV=production
+   APP_DEBUG=false
+   APP_KEY=base64:...                  # hasil: php artisan key:generate --show
+   APP_URL=https://<domain-railway-anda>
+   APP_TIMEZONE=Asia/Jakarta
+   APP_LOCALE=id
+
+   LOG_CHANNEL=stderr                  # agar log tampil di tab Logs Railway
+   LOG_LEVEL=error
+
+   DB_CONNECTION=mysql
+   DB_URL=${{MySQL.MYSQL_URL}}         # referensi ke layanan MySQL; sesuaikan bila nama layanannya berbeda
+
+   SESSION_DRIVER=database
+   CACHE_STORE=database
+   QUEUE_CONNECTION=database
+
+   GEMINI_API_KEY=...                  # opsional, untuk AI Chatbot
+
+   MAIL_MAILER=smtp                    # agar fitur lupa password benar-benar mengirim email
+   MAIL_HOST=...
+   MAIL_PORT=587
+   MAIL_USERNAME=...
+   MAIL_PASSWORD=...
+   MAIL_FROM_ADDRESS=...
+   ```
+   > `APP_ENV=production` wajib diisi: petunjuk akun demo di halaman login hanya disembunyikan di luar lingkungan `local`.
+
+4. **Jalankan Migrasi Otomatis Setiap Deploy**:
+   Pada **Settings → Deploy → Pre-Deploy Command** isi:
+   ```bash
+   php artisan migrate --force
+   ```
+
+5. **Isi Data Awal (Sekali Saja)**:
+   Jalankan seeder dari komputer lokal menggunakan [Railway CLI](https://docs.railway.com/guides/cli):
+   ```bash
+   railway link
+   railway run php artisan db:seed --force
+   ```
+   Setelah berhasil login, **segera ganti password ketiga akun demo** melalui menu *Kelola User System*.
+
+6. **Buat Domain Publik**:
+   Buka **Settings → Networking → Generate Domain**, salin domainnya ke variabel `APP_URL`, lalu lakukan *redeploy*.
+
+Setelah itu, setiap `git push` ke branch `master` akan memicu build dan deploy ulang secara otomatis.
+
+**Pemeriksaan setelah deploy:**
+- Halaman login tampil **tanpa** kotak akun demo.
+- Login admin berhasil dan seluruh grafik dashboard tampil.
+- Jika muncul *error 500*, buka **Deployments → View Logs**. Penyebab tersering: `APP_KEY` kosong atau migrasi belum dijalankan.
+
+---
+
+### 3. Panduan Deploy ke cPanel (Shared Hosting)
 
 1. **Kompilasi Aset di Komputer Lokal**:
    Sebelum mengunggah berkas, jalankan kompilasi produksi di lokal:
@@ -389,7 +459,7 @@ CACHE_STORE=database
 
 ---
 
-### 3. Panduan Deploy ke VPS Linux (Ubuntu / Debian + Nginx)
+### 4. Panduan Deploy ke VPS Linux (Ubuntu / Debian + Nginx)
 
 1. **Persiapan Server**:
    Pasang paket yang diperlukan (Nginx, PHP 8.3/8.4-FPM, MariaDB, Composer, Git):
