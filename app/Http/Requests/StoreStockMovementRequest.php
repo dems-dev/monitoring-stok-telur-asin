@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Enums\LogType;
+use App\Models\Supplier;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -30,7 +31,7 @@ class StoreStockMovementRequest extends FormRequest
             $this->merge(['status' => 'Selesai']);
 
             if ($this->filled('supplier_id') && blank($this->input('source_or_target'))) {
-                $supplierName = \App\Models\Supplier::find($this->input('supplier_id'))?->name;
+                $supplierName = Supplier::find($this->input('supplier_id'))?->name;
                 if ($supplierName) {
                     $this->merge(['source_or_target' => $supplierName]);
                 }
@@ -68,7 +69,7 @@ class StoreStockMovementRequest extends FormRequest
     {
         return [
             'logged_date.before_or_equal' => 'Tanggal tidak boleh melewati hari ini.',
-            'amount.min' => 'Jumlah minimal 1 butir.',
+            'amount.min' => 'Jumlah minimal 1.',
             'product_id.exists' => 'Varian telur tidak ditemukan atau sudah dihapus.',
         ];
     }

@@ -24,7 +24,7 @@ class ChatbotController extends Controller
         ]);
 
         $user = $request->user();
-        $rateLimitKey = 'chatbot:' . $user->id;
+        $rateLimitKey = 'chatbot:'.$user->id;
 
         // Rate limit: Maksimal 20 pesan per menit per user
         if (RateLimiter::tooManyAttempts($rateLimitKey, 20)) {

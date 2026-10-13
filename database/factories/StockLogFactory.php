@@ -4,11 +4,12 @@ namespace Database\Factories;
 
 use App\Enums\LogType;
 use App\Models\Product;
+use App\Models\StockLog;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\StockLog>
+ * @extends Factory<StockLog>
  */
 class StockLogFactory extends Factory
 {

@@ -4,19 +4,24 @@ namespace App\Exports;
 
 use App\Enums\LogType;
 use App\Models\Product;
+use App\Models\StockLog;
 use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithStyles;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class StockCardExport implements FromCollection, WithHeadings, WithMapping, ShouldAutoSize, WithStyles
+class StockCardExport implements FromCollection, ShouldAutoSize, WithHeadings, WithMapping, WithStyles
 {
     protected Product $product;
+
     protected Collection $rows;
+
     protected int $initialStock;
+
     protected int $rowNumber = 0;
 
     public function __construct(Product $product, Collection $rows, int $initialStock)
@@ -42,13 +47,13 @@ class StockCardExport implements FromCollection, WithHeadings, WithMapping, Shou
             'Masuk (+)',
             'Keluar (-)',
             'Penyesuaian (±)',
-            'Saldo Akhir (' . ($this->product->unit?->name ?? 'butir') . ')',
+            'Saldo Akhir ('.($this->product->unit?->name ?? 'butir').')',
             'Petugas',
         ];
     }
 
     /**
-     * @param \App\Models\StockLog $log
+     * @param  StockLog  $log
      */
     public function map($log): array
     {
@@ -61,7 +66,7 @@ class StockCardExport implements FromCollection, WithHeadings, WithMapping, Shou
         return [
             $this->rowNumber,
             $log->logged_date->format('Y-m-d'),
-            '#LOG-' . $log->id,
+            '#LOG-'.$log->id,
             $log->type->value,
             $log->supplier?->name ?? $log->source_or_target ?? $log->note ?? '-',
             $masuk ?: '-',
@@ -78,7 +83,7 @@ class StockCardExport implements FromCollection, WithHeadings, WithMapping, Shou
             1 => [
                 'font' => ['bold' => true, 'color' => ['rgb' => '1E293B']],
                 'fill' => [
-                    'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                    'fillType' => Fill::FILL_SOLID,
                     'startColor' => ['rgb' => 'E0F2FE'], // Sky light
                 ],
             ],

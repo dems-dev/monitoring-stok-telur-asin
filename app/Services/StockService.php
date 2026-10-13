@@ -15,6 +15,7 @@ class StockService
      * Catat barang masuk dan tambah stok fisik produk.
      *
      * @param  array<string, mixed>  $data
+     *
      * @throws \Throwable
      */
     public function barangMasuk(Product $product, int $jumlah, array $data = [], ?User $user = null): StockLog
@@ -52,6 +53,7 @@ class StockService
      * Ditolak dengan ValidationException jika stok fisik tidak mencukupi.
      *
      * @param  array<string, mixed>  $data
+     *
      * @throws ValidationException|\Throwable
      */
     public function barangKeluar(Product $product, int $jumlah, array $data = [], ?User $user = null): StockLog

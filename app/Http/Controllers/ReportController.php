@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\LogType;
 use App\Exports\StockCardExport;
 use App\Exports\StockMovementExport;
 use App\Http\Requests\ReportFilterRequest;
@@ -12,6 +13,7 @@ use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Response;
+use Illuminate\Support\Collection;
 use Illuminate\View\View;
 use Maatwebsite\Excel\Facades\Excel;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -39,10 +41,10 @@ class ReportController extends Controller
         $filters = $request->validated();
         $logs = $this->filtered($filters)->get();
 
-        if (!empty($filters['product_id'])) {
+        if (! empty($filters['product_id'])) {
             $filters['product_name'] = Product::find($filters['product_id'])?->name;
         }
-        if (!empty($filters['user_id'])) {
+        if (! empty($filters['user_id'])) {
             $filters['user_name'] = User::find($filters['user_id'])?->name;
         }
 
@@ -51,7 +53,7 @@ class ReportController extends Controller
             'filters' => $filters,
         ])->setPaper('a4', 'landscape');
 
-        $filename = 'Laporan_Mutasi_Stok_Telur_Asin_' . now()->format('Y-m-d') . '.pdf';
+        $filename = 'Laporan_Mutasi_Stok_Telur_Asin_'.now()->format('Y-m-d').'.pdf';
 
         return $pdf->download($filename);
     }
@@ -64,7 +66,7 @@ class ReportController extends Controller
         $filters = $request->validated();
         $logs = $this->filtered($filters)->get();
 
-        $filename = 'Laporan_Mutasi_Stok_Telur_Asin_' . now()->format('Y-m-d') . '.xlsx';
+        $filename = 'Laporan_Mutasi_Stok_Telur_Asin_'.now()->format('Y-m-d').'.xlsx';
 
         return Excel::download(new StockMovementExport($logs), $filename);
     }
@@ -77,7 +79,7 @@ class ReportController extends Controller
         $filters = $request->validated();
         $query = $this->filtered($filters)->reorder();
 
-        $filename = 'Laporan_Stok_Telur_Asin_' . now()->format('Y-m-d') . '.csv';
+        $filename = 'Laporan_Stok_Telur_Asin_'.now()->format('Y-m-d').'.csv';
 
         return response()->streamDownload(function () use ($query): void {
             $handle = fopen('php://output', 'wb');
@@ -134,7 +136,7 @@ class ReportController extends Controller
         $products = Product::with(['category', 'unit'])->orderBy('name')->get();
 
         $selectedProduct = null;
-        if (!empty($filters['product_id'])) {
+        if (! empty($filters['product_id'])) {
             $selectedProduct = $products->firstWhere('id', (int) $filters['product_id']);
         } elseif ($products->isNotEmpty()) {
             $selectedProduct = $products->first();
@@ -169,7 +171,7 @@ class ReportController extends Controller
             'summary' => $data['summary'],
         ])->setPaper('a4', 'portrait');
 
-        $filename = 'Kartu_Stok_' . $product->sku . '_' . now()->format('Y-m-d') . '.pdf';
+        $filename = 'Kartu_Stok_'.$product->sku.'_'.now()->format('Y-m-d').'.pdf';
 
         return $pdf->download($filename);
     }
@@ -184,7 +186,7 @@ class ReportController extends Controller
 
         $data = $this->calculateStockCardData($product, $filters);
 
-        $filename = 'Kartu_Stok_' . $product->sku . '_' . now()->format('Y-m-d') . '.xlsx';
+        $filename = 'Kartu_Stok_'.$product->sku.'_'.now()->format('Y-m-d').'.xlsx';
 
         return Excel::download(
             new StockCardExport($product, $data['movements'], $data['summary']['initial_stock']),
@@ -195,12 +197,12 @@ class ReportController extends Controller
     /**
      * Hitung pergerakan kartu stok dan saldo per tanggal.
      *
-     * @param array<string, mixed> $filters
-     * @return array{movements: \Illuminate\Support\Collection, summary: array<string, int>}
+     * @param  array<string, mixed>  $filters
+     * @return array{movements: Collection, summary: array<string, int>}
      */
     private function calculateStockCardData(?Product $product, array $filters): array
     {
-        if (!$product) {
+        if (! $product) {
             return [
                 'movements' => collect(),
                 'summary' => [
@@ -250,11 +252,11 @@ class ReportController extends Controller
         $totalAdjustments = 0;
 
         foreach ($movements as $log) {
-            if ($log->type === \App\Enums\LogType::MASUK) {
+            if ($log->type === LogType::MASUK) {
                 $totalMasuk += $log->amount;
-            } elseif ($log->type === \App\Enums\LogType::KELUAR) {
+            } elseif ($log->type === LogType::KELUAR) {
                 $totalKeluar += $log->amount;
-            } elseif ($log->type === \App\Enums\LogType::PENYESUAIAN) {
+            } elseif ($log->type === LogType::PENYESUAIAN) {
                 $totalAdjustments += ($log->stok_sesudah - $log->stok_sebelum);
             }
         }
@@ -276,7 +278,7 @@ class ReportController extends Controller
     }
 
     /**
-     * @param array<string, mixed> $filters
+     * @param  array<string, mixed>  $filters
      */
     private function filtered(array $filters): Builder
     {

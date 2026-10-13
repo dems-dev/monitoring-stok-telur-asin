@@ -172,7 +172,7 @@ class ChatbotTest extends TestCase
     public function test_chatbot_menerapkan_rate_limit(): void
     {
         $user = User::factory()->create();
-        RateLimiter::clear('chatbot:' . $user->id);
+        RateLimiter::clear('chatbot:'.$user->id);
 
         for ($i = 0; $i < 20; $i++) {
             $this->actingAs($user)->postJson('/chatbot/message', ['message' => 'Tes']);

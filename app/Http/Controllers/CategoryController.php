@@ -26,7 +26,7 @@ class CategoryController extends Controller implements HasMiddleware
     public function create(): View
     {
         return view('categories.form', [
-            'category' => new Category(),
+            'category' => new Category,
         ]);
     }
 

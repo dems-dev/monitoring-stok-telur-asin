@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Enums\LogType;
 use App\Models\Product;
 use App\Models\StockLog;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class ChatbotToolService
@@ -22,7 +21,7 @@ class ChatbotToolService
         $products = Product::with(['category', 'unit'])
             ->where(function ($q) use ($term) {
                 $q->where('name', 'like', "%{$term}%")
-                  ->orWhere('sku', 'like', "%{$term}%");
+                    ->orWhere('sku', 'like', "%{$term}%");
             })
             ->get();
 
@@ -169,11 +168,11 @@ class ChatbotToolService
             ->where('type', LogType::MASUK)
             ->where('logged_date', '>=', $startDate);
 
-        if (!empty($namaProduk)) {
+        if (! empty($namaProduk)) {
             $term = trim($namaProduk);
             $query->whereHas('product', function ($q) use ($term) {
                 $q->where('name', 'like', "%{$term}%")
-                  ->orWhere('sku', 'like', "%{$term}%");
+                    ->orWhere('sku', 'like', "%{$term}%");
             });
         }
 

@@ -123,8 +123,8 @@ class DashboardTest extends TestCase
         $response->assertOk();
         $response->assertSee('Masuk Hari Ini');
         $response->assertSee('Keluar Hari Ini');
-        $response->assertSee('150 ' . ($product->unit?->name ?? 'butir'));
-        $response->assertSee('60 ' . ($product->unit?->name ?? 'butir'));
+        $response->assertSee('150 '.($product->unit?->name ?? 'butir'));
+        $response->assertSee('60 '.($product->unit?->name ?? 'butir'));
     }
 
     public function test_grafik_tren_30_hari_berisi_total_masuk_dan_keluar_per_tanggal(): void

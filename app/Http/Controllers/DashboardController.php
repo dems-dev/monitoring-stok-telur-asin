@@ -22,7 +22,7 @@ class DashboardController extends Controller
             ->map(fn ($group) => (int) $group->sum('stock'));
 
         $totalStockDisplay = $stockByUnit
-            ->map(fn ($total, $unit) => number_format($total, 0, ',', '.') . ' ' . $unit)
+            ->map(fn ($total, $unit) => number_format($total, 0, ',', '.').' '.$unit)
             ->join(' · ');
 
         // 2. Nilai Persediaan (Stok x Harga Beli riil, khusus Admin & Pemilik).
@@ -47,7 +47,7 @@ class DashboardController extends Controller
 
         $masukTodayDisplay = $masukTodayByUnit->isEmpty()
             ? '0 butir'
-            : $masukTodayByUnit->map(fn ($total, $unit) => number_format($total, 0, ',', '.') . ' ' . $unit)->join(' · ');
+            : $masukTodayByUnit->map(fn ($total, $unit) => number_format($total, 0, ',', '.').' '.$unit)->join(' · ');
 
         $keluarTodayLogs = StockLog::with('product.unit')
             ->where('type', LogType::KELUAR)
@@ -60,7 +60,7 @@ class DashboardController extends Controller
 
         $keluarTodayDisplay = $keluarTodayByUnit->isEmpty()
             ? '0 butir'
-            : $keluarTodayByUnit->map(fn ($total, $unit) => number_format($total, 0, ',', '.') . ' ' . $unit)->join(' · ');
+            : $keluarTodayByUnit->map(fn ($total, $unit) => number_format($total, 0, ',', '.').' '.$unit)->join(' · ');
 
         // 4. Banner Peringatan Stok Menipis (stok <= stok_minimum)
         $lowStockItems = $products->filter->isLowStock()->values();

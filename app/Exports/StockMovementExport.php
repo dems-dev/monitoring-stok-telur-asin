@@ -9,11 +9,13 @@ use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithStyles;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class StockMovementExport implements FromCollection, WithHeadings, WithMapping, ShouldAutoSize, WithStyles
+class StockMovementExport implements FromCollection, ShouldAutoSize, WithHeadings, WithMapping, WithStyles
 {
     protected Collection $logs;
+
     protected int $rowNumber = 0;
 
     public function __construct(Collection $logs)
@@ -46,7 +48,7 @@ class StockMovementExport implements FromCollection, WithHeadings, WithMapping, 
     }
 
     /**
-     * @param StockLog $log
+     * @param  StockLog  $log
      */
     public function map($log): array
     {
@@ -75,7 +77,7 @@ class StockMovementExport implements FromCollection, WithHeadings, WithMapping, 
             1 => [
                 'font' => ['bold' => true, 'color' => ['rgb' => '1E293B']],
                 'fill' => [
-                    'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                    'fillType' => Fill::FILL_SOLID,
                     'startColor' => ['rgb' => 'FEF3C7'], // Amber light
                 ],
             ],

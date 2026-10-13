@@ -26,7 +26,7 @@ class UnitController extends Controller implements HasMiddleware
     public function create(): View
     {
         return view('units.form', [
-            'unit' => new Unit(),
+            'unit' => new Unit,
         ]);
     }
 

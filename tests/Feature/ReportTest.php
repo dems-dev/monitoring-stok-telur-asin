@@ -50,7 +50,7 @@ class ReportTest extends TestCase
         ]);
 
         $response = $this->actingAs($user)
-            ->get('/laporan?product_id=' . $productA->id);
+            ->get('/laporan?product_id='.$productA->id);
 
         $response->assertOk();
         $this->assertCount(1, $response->viewData('logs'));
@@ -71,7 +71,7 @@ class ReportTest extends TestCase
         ]);
 
         $this->actingAs($userA)
-            ->get('/laporan?user_id=' . $userA->id)
+            ->get('/laporan?user_id='.$userA->id)
             ->assertOk()
             ->assertSee('Pengiriman Oleh Anton')
             ->assertDontSee('Pengiriman Oleh Budi');
@@ -186,7 +186,7 @@ class ReportTest extends TestCase
         ]);
 
         $response = $this->actingAs($user)
-            ->get('/laporan/kartu-stok?product_id=' . $product->id)
+            ->get('/laporan/kartu-stok?product_id='.$product->id)
             ->assertOk()
             ->assertSee('Telur Asin Original Rebus')
             ->assertSee('150')
@@ -205,7 +205,7 @@ class ReportTest extends TestCase
             'stok_sesudah' => 50,
         ]);
 
-        $response = $this->actingAs($user)->get('/laporan/kartu-stok/pdf?product_id=' . $product->id);
+        $response = $this->actingAs($user)->get('/laporan/kartu-stok/pdf?product_id='.$product->id);
 
         $response->assertOk();
         $response->assertHeader('content-type', 'application/pdf');
@@ -224,7 +224,7 @@ class ReportTest extends TestCase
             'stok_sesudah' => 50,
         ]);
 
-        $response = $this->actingAs($user)->get('/laporan/kartu-stok/excel?product_id=' . $product->id);
+        $response = $this->actingAs($user)->get('/laporan/kartu-stok/excel?product_id='.$product->id);
 
         $response->assertOk();
         $response->assertHeader('content-type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');

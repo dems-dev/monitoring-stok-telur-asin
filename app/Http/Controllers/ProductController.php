@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProductRequest;
+use App\Models\Category;
 use App\Models\Product;
+use App\Models\Unit;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
@@ -44,7 +46,7 @@ class ProductController extends Controller implements HasMiddleware
 
         return view('products.index', [
             'products' => $products,
-            'categories' => \App\Models\Category::orderBy('name')->get(),
+            'categories' => Category::orderBy('name')->get(),
             'search' => $search,
             'selectedCategory' => $categoryId,
         ]);
@@ -53,9 +55,9 @@ class ProductController extends Controller implements HasMiddleware
     public function create(): View
     {
         return view('products.form', [
-            'product' => new Product(),
-            'categories' => \App\Models\Category::orderBy('name')->get(),
-            'units' => \App\Models\Unit::orderBy('name')->get(),
+            'product' => new Product,
+            'categories' => Category::orderBy('name')->get(),
+            'units' => Unit::orderBy('name')->get(),
             'unitLocked' => false,
         ]);
     }
@@ -76,8 +78,8 @@ class ProductController extends Controller implements HasMiddleware
     {
         return view('products.form', [
             'product' => $product,
-            'categories' => \App\Models\Category::orderBy('name')->get(),
-            'units' => \App\Models\Unit::orderBy('name')->get(),
+            'categories' => Category::orderBy('name')->get(),
+            'units' => Unit::orderBy('name')->get(),
             'unitLocked' => $product->hasMovements(),
         ]);
     }

@@ -26,7 +26,7 @@ class SupplierController extends Controller implements HasMiddleware
     public function create(): View
     {
         return view('suppliers.form', [
-            'supplier' => new Supplier(),
+            'supplier' => new Supplier,
         ]);
     }
 

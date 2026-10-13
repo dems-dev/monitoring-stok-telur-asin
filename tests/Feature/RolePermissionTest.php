@@ -2,7 +2,10 @@
 
 namespace Tests\Feature;
 
+use App\Enums\Role;
+use App\Models\Category;
 use App\Models\Product;
+use App\Models\Unit;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -38,8 +41,8 @@ class RolePermissionTest extends TestCase
     public function test_petugas_tidak_bisa_mengelola_master_produk(): void
     {
         $petugas = User::factory()->create();
-        $category = \App\Models\Category::factory()->create();
-        $unit = \App\Models\Unit::factory()->create();
+        $category = Category::factory()->create();
+        $unit = Unit::factory()->create();
 
         $this->actingAs($petugas)->get('/products/create')->assertForbidden();
         $this->actingAs($petugas)->post('/products', [
@@ -75,8 +78,8 @@ class RolePermissionTest extends TestCase
     public function test_admin_bisa_menambah_produk(): void
     {
         $admin = User::factory()->admin()->create();
-        $category = \App\Models\Category::factory()->create();
-        $unit = \App\Models\Unit::factory()->create();
+        $category = Category::factory()->create();
+        $unit = Unit::factory()->create();
 
         $this->actingAs($admin)->post('/products', [
             'sku' => 'TLR-BARU-01',
@@ -127,7 +130,7 @@ class RolePermissionTest extends TestCase
             'role' => 'PETUGAS',
         ]);
 
-        $this->assertSame(\App\Enums\Role::ADMIN, $admin->fresh()->role);
+        $this->assertSame(Role::ADMIN, $admin->fresh()->role);
     }
 
     public function test_admin_bisa_mengubah_password_user_lain(): void

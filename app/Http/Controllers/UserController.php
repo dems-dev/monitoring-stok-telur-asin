@@ -27,7 +27,7 @@ class UserController extends Controller implements HasMiddleware
     public function create(): View
     {
         return view('users.form', [
-            'user' => new User(),
+            'user' => new User,
             'roles' => Role::cases(),
         ]);
     }

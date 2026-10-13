@@ -2,7 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Enums\Role;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\StockLog;
@@ -17,7 +16,9 @@ class MasterDataTest extends TestCase
     use RefreshDatabase;
 
     private User $admin;
+
     private User $petugas;
+
     private User $owner;
 
     protected function setUp(): void

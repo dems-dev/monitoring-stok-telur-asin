@@ -29,7 +29,7 @@ class ChatbotService
         $toolResult = null;
         $reply = null;
 
-        if (!empty($apiKey)) {
+        if (! empty($apiKey)) {
             try {
                 $llmResult = $this->callGeminiWithTools($apiKey, $message);
                 $toolCalled = $llmResult['tool_called'];
@@ -37,7 +37,7 @@ class ChatbotService
                 $toolResult = $llmResult['tool_result'];
                 $reply = $llmResult['response'];
             } catch (\Throwable $e) {
-                Log::warning('Gemini API call failed, falling back to local resolver: ' . $e->getMessage());
+                Log::warning('Gemini API call failed, falling back to local resolver: '.$e->getMessage());
             }
         }
 
@@ -96,7 +96,7 @@ class ChatbotService
                         'description' => 'Melihat daftar produk telur asin yang persediaannya menipis atau habis (stok <= batas minimum).',
                         'parameters' => [
                             'type' => 'OBJECT',
-                            'properties' => new \stdClass(),
+                            'properties' => new \stdClass,
                         ],
                     ],
                     [
@@ -134,17 +134,17 @@ class ChatbotService
             ],
         ];
 
-        $systemInstruction = "Anda adalah Asisten Virtual SIM-STOK Telur Asin Brebes. Jawab pertanyaan pengguna secara ringkas, sopan, dan jelas dalam Bahasa Indonesia. "
-            . "PENTING: Seluruh angka stok, harga, dan riwayat mutasi WAJIB diperoleh dari pemanggilan function tools yang tersedia. Jangan pernah mengarang angka atau data persediaan. "
-            . "Jika pengguna hanya menyapa (halo/hai/pagi), perkenalkan diri Anda dan sebutkan bantuan yang bisa Anda berikan (cek stok produk, daftar stok menipis, produk terlaris, riwayat pasokan masuk).";
+        $systemInstruction = 'Anda adalah Asisten Virtual SIM-STOK Telur Asin Brebes. Jawab pertanyaan pengguna secara ringkas, sopan, dan jelas dalam Bahasa Indonesia. '
+            .'PENTING: Seluruh angka stok, harga, dan riwayat mutasi WAJIB diperoleh dari pemanggilan function tools yang tersedia. Jangan pernah mengarang angka atau data persediaan. '
+            .'Jika pengguna hanya menyapa (halo/hai/pagi), perkenalkan diri Anda dan sebutkan bantuan yang bisa Anda berikan (cek stok produk, daftar stok menipis, produk terlaris, riwayat pasokan masuk).';
 
         $userContent = ['role' => 'user', 'parts' => [['text' => $message]]];
 
         // Step 1: Kirim prompt user ke Gemini dengan tool declaration
         $step1Response = $this->requestGemini($apiKey, [$userContent], $systemInstruction, $toolDeclarations);
 
-        if (!$step1Response->successful()) {
-            throw new \Exception('Gemini API Error (HTTP ' . $step1Response->status() . '): ' . $step1Response->body());
+        if (! $step1Response->successful()) {
+            throw new \Exception('Gemini API Error (HTTP '.$step1Response->status().'): '.$step1Response->body());
         }
 
         $modelContent = $step1Response->json('candidates.0.content', []);
@@ -157,8 +157,9 @@ class ChatbotService
         }
 
         // Jika model tidak memanggil tool, ambil teks langsung
-        if (!$functionCall) {
+        if (! $functionCall) {
             $textReply = $this->extractText($modelContent);
+
             return [
                 'response' => $textReply ?: 'Halo! Ada yang bisa saya bantu terkait informasi persediaan stok telur asin?',
                 'tool_called' => null,
@@ -272,6 +273,7 @@ class ChatbotService
         // Intent: Stok menipis / kritis / habis
         if (str_contains($lower, 'menipis') || str_contains($lower, 'habis') || str_contains($lower, 'peringatan') || str_contains($lower, 'kritis')) {
             $result = $this->tools->daftarStokMenipis();
+
             return [
                 'response' => $this->formatFallbackText('daftar_stok_menipis', $result),
                 'tool_called' => 'daftar_stok_menipis',
@@ -290,6 +292,7 @@ class ChatbotService
             }
 
             $result = $this->tools->produkTerlaris($periode);
+
             return [
                 'response' => $this->formatFallbackText('produk_terlaris', $result),
                 'tool_called' => 'produk_terlaris',
@@ -301,6 +304,7 @@ class ChatbotService
         // Intent: Riwayat barang masuk / pasokan
         if (str_contains($lower, 'barang masuk') || str_contains($lower, 'pasokan') || str_contains($lower, 'suplai') || str_contains($lower, 'panen')) {
             $result = $this->tools->riwayatBarangMasuk(null, 7);
+
             return [
                 'response' => $this->formatFallbackText('riwayat_barang_masuk', $result),
                 'tool_called' => 'riwayat_barang_masuk',
@@ -315,8 +319,9 @@ class ChatbotService
             $cleaned = preg_replace('/(cek|stok|berapa|sisa|jumlah|ada|harga|telur|asin|tlr)/i', '', $message);
             $keyword = trim(preg_replace('/[^a-zA-Z0-9\s]/', '', $cleaned));
 
-            if (!empty($keyword) && strlen($keyword) >= 3) {
+            if (! empty($keyword) && strlen($keyword) >= 3) {
                 $result = $this->tools->cekStok($keyword);
+
                 return [
                     'response' => $this->formatFallbackText('cek_stok', $result),
                     'tool_called' => 'cek_stok',
@@ -329,10 +334,10 @@ class ChatbotService
         // Salam / Bantuan Umum
         return [
             'response' => "Halo! Saya adalah Asisten AI SIM-STOK Telur Asin. Anda dapat menanyakan:\n"
-                . "• \"Cek stok telur asin original\"\n"
-                . "• \"Daftar produk yang stoknya menipis\"\n"
-                . "• \"Apa saja produk terlaris 30 hari terakhir?\"\n"
-                . "• \"Riwayat barang masuk seminggu terakhir\"",
+                ."• \"Cek stok telur asin original\"\n"
+                ."• \"Daftar produk yang stoknya menipis\"\n"
+                ."• \"Apa saja produk terlaris 30 hari terakhir?\"\n"
+                .'• "Riwayat barang masuk seminggu terakhir"',
             'tool_called' => null,
             'tool_args' => null,
             'tool_result' => null,
@@ -350,23 +355,25 @@ class ChatbotService
                     return $result['message'] ?? 'Produk tidak ditemukan dalam katalog persediaan.';
                 }
 
-                $lines = ["Berikut hasil pencarian stok produk:"];
+                $lines = ['Berikut hasil pencarian stok produk:'];
                 foreach ($result['data'] as $p) {
                     $status = $p['status_stok'];
                     $badge = $status === 'Aman' ? '✅ Aman' : ($status === 'Menipis' ? '⚠️ Menipis' : '❌ Habis');
-                    $lines[] = "• **{$p['nama']}** ({$p['sku']})\n  Stok: **{$p['stok']} {$p['satuan']}** (Min: {$p['batas_minimum']}) | Status: {$badge} | Harga: Rp " . number_format($p['harga_jual'], 0, ',', '.');
+                    $lines[] = "• **{$p['nama']}** ({$p['sku']})\n  Stok: **{$p['stok']} {$p['satuan']}** (Min: {$p['batas_minimum']}) | Status: {$badge} | Harga: Rp ".number_format($p['harga_jual'], 0, ',', '.');
                 }
+
                 return implode("\n", $lines);
 
             case 'daftar_stok_menipis':
                 if (empty($result['data'])) {
-                    return "✅ " . ($result['message'] ?? 'Seluruh persediaan aman. Tidak ada produk yang menipis.');
+                    return '✅ '.($result['message'] ?? 'Seluruh persediaan aman. Tidak ada produk yang menipis.');
                 }
 
                 $lines = ["⚠️ Ditemukan **{$result['total_menipis']} varian** produk dengan stok menipis / mencapai batas minimum:"];
                 foreach ($result['data'] as $item) {
                     $lines[] = "• **{$item['nama']}** ({$item['sku']}): Sisa **{$item['stok_sekarang']} {$item['satuan']}** (Batas Min: {$item['batas_minimum']}) - [{$item['kondisi']}]";
                 }
+
                 return implode("\n", $lines);
 
             case 'produk_terlaris':
@@ -378,6 +385,7 @@ class ChatbotService
                 foreach ($result['data'] as $item) {
                     $lines[] = "{$item['ranking']}. **{$item['nama_produk']}**: {$item['total_terjual']} {$item['satuan']}";
                 }
+
                 return implode("\n", $lines);
 
             case 'riwayat_barang_masuk':
@@ -389,6 +397,7 @@ class ChatbotService
                 foreach ($result['data'] as $item) {
                     $lines[] = "• [{$item['tanggal']}] **{$item['nama_produk']}** (+{$item['jumlah']} {$item['satuan']}) dari {$item['sumber']}";
                 }
+
                 return implode("\n", $lines);
 
             default:

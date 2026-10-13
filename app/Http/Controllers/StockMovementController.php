@@ -93,7 +93,7 @@ class StockMovementController extends Controller
 
         $unitName = $product->unit?->name ?? 'butir';
         $selisih = $log->stok_sesudah - $log->stok_sebelum;
-        $tanda = $selisih > 0 ? "+{$selisih}" : ($selisih < 0 ? "{$selisih}" : "0");
+        $tanda = $selisih > 0 ? "+{$selisih}" : ($selisih < 0 ? "{$selisih}" : '0');
 
         return redirect()
             ->route('dashboard')
