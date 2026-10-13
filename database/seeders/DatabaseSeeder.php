@@ -22,7 +22,9 @@ class DatabaseSeeder extends Seeder
             ['username' => 'petugas', 'name' => 'Siti Rahma', 'email' => 'petugas@telur.com', 'role' => Role::PETUGAS, 'password' => 'petugas123'],
             ['username' => 'owner', 'name' => 'H. Ahmad Brebes', 'email' => 'owner@telur.com', 'role' => Role::OWNER, 'password' => 'owner123'],
         ])->mapWithKeys(fn (array $data) => [
-            $data['username'] => User::updateOrCreate(['username' => $data['username']], $data),
+            // firstOrCreate: seeder aman dijalankan ulang (mis. di setiap deploy)
+            // tanpa menimpa password yang sudah diganti pengguna.
+            $data['username'] => User::firstOrCreate(['username' => $data['username']], $data),
         ]);
 
         $units = collect([
@@ -61,7 +63,9 @@ class DatabaseSeeder extends Seeder
             ['sku' => 'TLR-PAKET-06', 'name' => 'Telur Asin Pack Isi 6', 'category_id' => $categories['Kemasan']->id, 'unit_id' => $units['pack']->id, 'price' => 22000, 'purchase_price' => 17500, 'min_stock' => 25, 'nearest_expiry_date' => Carbon::today()->addDays(20)],
             ['sku' => 'TLR-MNTH-05', 'name' => 'Telur Mentah Salted Batch A', 'category_id' => $categories['Mentah']->id, 'unit_id' => $units['butir']->id, 'price' => 3000, 'purchase_price' => 2400, 'min_stock' => 80, 'nearest_expiry_date' => Carbon::today()->addDays(5)],
         ])->mapWithKeys(fn (array $data) => [
-            $data['sku'] => Product::updateOrCreate(['sku' => $data['sku']], $data),
+            // withTrashed + firstOrCreate: tidak menimpa harga yang sudah diubah admin
+            // dan tidak bentrok SKU unik bila produk demo sudah dihapus lunak.
+            $data['sku'] => Product::withTrashed()->firstOrCreate(['sku' => $data['sku']], $data),
         ]);
 
         // Mutasi hanya dibuat sekali; menjalankan seeder ulang tidak menggandakan stok.

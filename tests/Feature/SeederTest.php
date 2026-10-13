@@ -6,6 +6,7 @@ use App\Models\Product;
 use App\Models\StockLog;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class SeederTest extends TestCase
@@ -58,5 +59,21 @@ class SeederTest extends TestCase
 
         $this->assertSame(450, Product::where('sku', 'TLR-ORIG-01')->value('stock'));
         $this->assertSame(9, StockLog::count());
+    }
+
+    public function test_seeder_ulang_tidak_menimpa_password_harga_atau_produk_terhapus(): void
+    {
+        $this->seed();
+
+        $admin = User::where('username', 'admin')->firstOrFail();
+        $admin->update(['password' => 'rahasia-baru-123']);
+        Product::where('sku', 'TLR-ORIG-01')->firstOrFail()->update(['price' => 9999]);
+        Product::where('sku', 'TLR-ASAP-03')->firstOrFail()->delete();
+
+        $this->seed();
+
+        $this->assertTrue(Hash::check('rahasia-baru-123', $admin->fresh()->password));
+        $this->assertSame(9999, (int) Product::where('sku', 'TLR-ORIG-01')->value('price'));
+        $this->assertSoftDeleted('products', ['sku' => 'TLR-ASAP-03']);
     }
 }
